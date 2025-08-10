@@ -1,0 +1,8 @@
+# auto generated files
+obj/
+
+# IDE configuration
+.idea/
+
+# Appsettings
+appsettings.*.json
