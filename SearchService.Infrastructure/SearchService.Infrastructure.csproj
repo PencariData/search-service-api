@@ -6,4 +6,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.1.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SearchService.Domain\SearchService.Domain.csproj" />
+    </ItemGroup>
+
 </Project>
