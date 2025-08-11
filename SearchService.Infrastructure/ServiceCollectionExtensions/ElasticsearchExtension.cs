@@ -2,9 +2,9 @@ using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace SearchService.Infrastructure;
+namespace SearchService.Infrastructure.ServiceCollectionExtensions;
 
-public static class ElasticsearchConfig
+public static class ElasticsearchExtension
 {
     public static IServiceCollection AddElasticSearch(this IServiceCollection services, IConfiguration configuration)
     {
