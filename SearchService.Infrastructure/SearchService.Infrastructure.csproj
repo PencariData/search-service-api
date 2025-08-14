@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.1.0" />
+      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
     </ItemGroup>
@@ -15,6 +15,13 @@
     <ItemGroup>
       <ProjectReference Include="..\SearchService.Application\SearchService.Application.csproj" />
       <ProjectReference Include="..\SearchService.Domain\SearchService.Domain.csproj" />
+      <ProjectReference Include="..\SearchService.Shared\SearchService.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+        <HintPath>..\..\..\..\..\..\..\usr\lib\dotnet\shared\Microsoft.AspNetCore.App\8.0.18\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

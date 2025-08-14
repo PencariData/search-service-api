@@ -1,7 +1,7 @@
 using FluentValidation;
 using SearchService.Application.Enums;
 
-namespace SearchService.Application.Dtos;
+namespace SearchService.Application.Dto;
 
 public class GetAccommodationRequest
 {

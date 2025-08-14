@@ -1,4 +1,4 @@
-using Microsoft.VisualBasic.CompilerServices;
+using System.Text.Json.Serialization;
 using SearchService.Domain.Enums;
 using SearchService.Domain.ValueObjects;
 
@@ -36,6 +36,7 @@ public class AccommodationEntity
     }
     
     public static AccommodationEntity Create(
+        Guid id,
         string name, 
         string country, 
         string administrationLevel1, 
@@ -54,7 +55,7 @@ public class AccommodationEntity
             throw new ArgumentNullException(nameof(fullDestination), "Accommodation destination cannot be null or empty");
         
         return new AccommodationEntity(
-            Guid.NewGuid(), 
+            id, 
             name, 
             country, 
             administrationLevel1, 

@@ -1,9 +1,9 @@
 using SearchService.Domain.Enums;
 using SearchService.Domain.ValueObjects;
 
-namespace SearchService.Application.Dtos;
+namespace SearchService.Application.Dto;
 
-public record AccommodationDto(
+public record GetAccommodationResponse(
     Guid Id,
     string Name,
     string Destination,

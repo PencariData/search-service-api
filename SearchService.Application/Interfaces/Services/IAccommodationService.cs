@@ -1,8 +1,8 @@
-using SearchService.Application.Dtos;
+using SearchService.Application.Dto;
 
 namespace SearchService.Application.Interfaces.Services;
 
 public interface IAccommodationService
 {
-    public Task<List<AccommodationDto>> SearchAccommodationAsync(GetAccommodationRequest request);
+    public Task<List<GetAccommodationResponse>> SearchAccommodationsAsync(GetAccommodationRequest request);
 }

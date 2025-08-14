@@ -3,28 +3,19 @@ using FluentValidation;
 
 namespace SearchService.API.Middlewares;
 
-public class ExceptionHandlingMiddleware
+public class ExceptionHandlingMiddleware(
+    RequestDelegate next,
+    ILogger<ExceptionHandlingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-    public ExceptionHandlingMiddleware(
-        RequestDelegate next, 
-        ILogger<ExceptionHandlingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task Invoke(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning(ex, "Validation failed");
+            logger.LogWarning(ex, "Validation failed");
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(ApiResponse<string>.Fail("Validation error")
@@ -32,7 +23,7 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
+            logger.LogError(ex, "Unhandled exception");
 
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await context.Response.WriteAsJsonAsync(ApiResponse<string>.Fail("An unexpected error occurred."));

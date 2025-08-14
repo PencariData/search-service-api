@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SearchService.Application",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SearchService.API", "SearchService.API\SearchService.API.csproj", "{C9E2528A-6930-4006-9C74-2C5E3AACC06D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SearchService.Shared", "SearchService.Shared\SearchService.Shared.csproj", "{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,7 @@ Global
 		{A61D8615-1E34-491F-9D5F-40A96526D911} = {BBFE52C5-1AEB-4B0A-B147-5B1C3C8B73BB}
 		{6CF92776-808F-499C-9EB2-4D90E1CB4BA3} = {BBFE52C5-1AEB-4B0A-B147-5B1C3C8B73BB}
 		{C9E2528A-6930-4006-9C74-2C5E3AACC06D} = {BBFE52C5-1AEB-4B0A-B147-5B1C3C8B73BB}
+		{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9} = {BBFE52C5-1AEB-4B0A-B147-5B1C3C8B73BB}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{D43987A6-D744-4DBC-A783-EE8A182F1D3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -38,5 +41,9 @@ Global
 		{C9E2528A-6930-4006-9C74-2C5E3AACC06D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9E2528A-6930-4006-9C74-2C5E3AACC06D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9E2528A-6930-4006-9C74-2C5E3AACC06D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E7D1AB8-F3A3-49E7-95A8-B904BBE9E1F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

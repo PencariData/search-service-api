@@ -1,25 +1,161 @@
-
-
-using SearchService.Application.Interfaces;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.QueryDsl;
+using Microsoft.Extensions.Logging;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Domain.Entities;
+using SearchService.Infrastructure.Helpers.Mapping;
+using SearchService.Shared.Models;
 
 namespace SearchService.Infrastructure.Repositories;
 
-public class AccommodationRepository : IAccommodationRepository
+public class AccommodationRepository(
+    ElasticsearchClient elasticClient,
+    ILogger<AccommodationRepository> logger,
+    ElasticConfiguration elasticConfiguration) : IAccommodationRepository
 {
-    public Task<IEnumerable<AccommodationEntity>> GetByNameAsync(string name, int limit)
+    
+    public async Task<IEnumerable<AccommodationEntity>?> GetByNameAsync(string name, int limit)
     {
-        throw new NotImplementedException();
+        var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
+            .Indices(elasticConfiguration.AccommodationIndex)
+            .Size(limit)
+            .Query(q => q
+                .Bool(b => b
+                    .Should(
+                        sh => sh.Term(t => t.Field("name.keyword").Value(name).Boost(5)),
+                        sh => sh.MultiMatch(m => m
+                            .Query(name)
+                            .Fields(new[] { "name", "name.keyword^3" })
+                            .Type(TextQueryType.BestFields)
+                            .Fuzziness(new Fuzziness("AUTO"))
+                        )
+                    )
+                )
+            )
+            .Sort(srt => srt.Score(sc => sc.Order(SortOrder.Desc)))
+        );
+
+        if (searchResponse.IsValidResponse)
+        {
+            return searchResponse.Documents.Select(JsonToAccommodationMapper.Map);
+        }
+        
+        if (!string.IsNullOrWhiteSpace(searchResponse.ApiCallDetails.OriginalException.Message))
+        {
+            // Transport layer failure (e.g., connection refused, timeout, DNS issue)
+            throw new Exception(
+                "Failed to connect to Elasticsearch",
+                searchResponse.ApiCallDetails.OriginalException.InnerException 
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchResponse.ElasticsearchServerError.Error.Reason))
+        {
+            throw new Exception(
+                $"Elasticsearch query failed: {searchResponse.ElasticsearchServerError.Error.Reason}"
+            );
+        }
+
+        // Unexpected error state
+        throw new Exception("Unknown Elasticsearch error occurred");
+
     }
 
-    public Task<IEnumerable<AccommodationEntity>> GetByDestinationAsync(string destination, int limit)
+    public async Task<IEnumerable<AccommodationEntity>?> GetByDestinationAsync(string destination, int limit)
     {
-        throw new NotImplementedException();
+        var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
+            .Indices(elasticConfiguration.AccommodationIndex)
+            .Size(limit)
+            .Query(q => q
+                .MultiMatch(m => m
+                    .Query(destination)
+                    .Fields(new[]
+                    {
+                        "country",
+                        "administrationLevel1",
+                        "administrationLevel2",
+                        "fullDestination^2" // boost full destination
+                    })
+                    .Type(TextQueryType.BestFields)
+                    .Fuzziness(new Fuzziness("AUTO"))
+                )
+            )
+            .Sort(srt => srt.Score(sc => sc.Order(SortOrder.Desc)))
+        );
+
+        if (!searchResponse.IsValidResponse)
+            throw new Exception($"Elasticsearch query failed: {searchResponse.ElasticsearchServerError.Error.Reason}");
+
+        return searchResponse.Documents.Select(JsonToAccommodationMapper.Map);
     }
 
-    public Task<IEnumerable<AccommodationEntity>> GetHotelSuggestionsAsync(string name, int limit)
+    public async Task<IEnumerable<string>> GetHotelSuggestionsAsync(string name, int limit)
     {
-        throw new NotImplementedException();
+        logger.LogDebug("[Suggestions] Request started — name: '{Name}', limit: {Limit}", name, limit);
+
+        var payload = new
+        {
+            size = 0,
+            suggest = new
+            {
+                hotel_suggest = new
+                {
+                    prefix = name,
+                    completion = new
+                    {
+                        field = "name.suggest",
+                        skip_duplicates = true,
+                        size = limit
+                    }
+                }
+            }
+        };
+
+        logger.LogDebug("[Suggestions] Elasticsearch request payload:\n{Payload}",
+            JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+
+        using var http = new HttpClient();
+        http.BaseAddress = new Uri(elasticConfiguration.ElasticUrl);
+
+        var response = await http.PostAsJsonAsync($"{elasticConfiguration.AccommodationIndex}/_search", payload);
+
+        var rawResponse = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Elasticsearch query failed: {response.StatusCode} - {rawResponse}");
+        }
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(rawResponse));
+        using var jsonDoc = await JsonDocument.ParseAsync(stream);
+
+        if (!jsonDoc.RootElement.TryGetProperty("suggest", out var suggestElement) ||
+            !suggestElement.TryGetProperty("hotel_suggest", out var hotelSuggestArray) ||
+            hotelSuggestArray.GetArrayLength() == 0)
+        {
+            logger.LogWarning("[Suggestions] No suggestions found for name: '{Name}'", name);
+            return [];
+        }
+
+        var firstSuggest = hotelSuggestArray[0];
+        if (!firstSuggest.TryGetProperty("options", out var optionsArray))
+        {
+            logger.LogWarning("[Suggestions] No 'options' found in Elasticsearch response for name: '{Name}'", name);
+            return [];
+        }
+
+        var suggestions = optionsArray
+            .EnumerateArray()
+            .Select(opt => opt.GetProperty("text").GetString() ?? string.Empty)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct()
+            .ToList();
+
+        logger.LogDebug("[Suggestions] Extracted results: {@Suggestions}", suggestions);
+
+        return suggestions;
     }
 }

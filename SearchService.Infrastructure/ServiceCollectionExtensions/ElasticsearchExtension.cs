@@ -1,23 +1,21 @@
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SearchService.Shared.Models;
 
 namespace SearchService.Infrastructure.ServiceCollectionExtensions;
 
 public static class ElasticsearchExtension
 {
-    public static IServiceCollection AddElasticSearch(this IServiceCollection services, IConfiguration configuration)
+    public static void AddElasticSearch(this IServiceCollection services)
     {
-        var uri = configuration["ElasticConfiguration:ElasticUrl"] 
-                  ?? throw new InvalidOperationException("ElasticUrl configuration is not defined");
-        
-        var settings = new ElasticsearchClientSettings(new Uri(uri));
+        services.AddSingleton(sp =>
+        {
+            var config = sp.GetRequiredService<ElasticConfiguration>();
 
-        var client = new ElasticsearchClient(settings);
-
-        services.AddSingleton(client);
-
-        return services;
+            var settings = new ElasticsearchClientSettings(new Uri(config.ElasticUrl));
+            return new ElasticsearchClient(settings);
+        });
     }
 
 }

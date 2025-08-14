@@ -8,10 +8,10 @@ namespace SearchService.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static void AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAccommodationService, AccommodationService>();
+        services.AddScoped<ISearchSuggestionService, SearchSuggestionService>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-        return services;
     }
 }
