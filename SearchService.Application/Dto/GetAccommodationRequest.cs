@@ -3,25 +3,19 @@ using SearchService.Application.Enums;
 
 namespace SearchService.Application.Dto;
 
-public class GetAccommodationRequest
-{
-    public string? Name { get; set; }
-    public string? Destination  { get; set; }
-    public AccommodationSearchType AccommodationSearchType { get; set; }
-    public int Limit { get; set; }
-}
+public record GetAccommodationRequest(
+    string SearchQuery,
+    AccommodationSearchType AccommodationSearchType,
+    int Limit
+);
 
 public class GetAccommodationRequestValidator : AbstractValidator<GetAccommodationRequest>
 {
     public GetAccommodationRequestValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .When(x => x.AccommodationSearchType == AccommodationSearchType.Name);
-
-        RuleFor(x => x.Destination)
-            .NotEmpty()
-            .When(x => x.AccommodationSearchType == AccommodationSearchType.Destination);
+        RuleFor(x => x.SearchQuery)
+            .NotNull()
+            .NotEmpty();
 
         RuleFor(x => x.Limit)
             .GreaterThan(0)

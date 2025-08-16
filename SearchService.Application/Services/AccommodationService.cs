@@ -11,7 +11,7 @@ public class AccommodationService(
     IValidator<GetAccommodationRequest> validator)
     : IAccommodationService
 {
-    public async Task<List<GetAccommodationResponse>> SearchAccommodationsAsync(GetAccommodationRequest request)
+    public async Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request)
     {
         var validationResult = await validator.ValidateAsync(request);
         
@@ -22,27 +22,24 @@ public class AccommodationService(
 
         var accommodations = request.AccommodationSearchType switch
         {
-            AccommodationSearchType.Name => await accommodationRepository.GetByNameAsync(
-                request.Name!, // validated not null
+            AccommodationSearchType.ByName => await accommodationRepository.GetByNameAsync(
+                request.SearchQuery,
                 request.Limit),
             
-            AccommodationSearchType.Destination => await accommodationRepository.GetByDestinationAsync(
-                request.Destination!, // validated not null
+            AccommodationSearchType.ByDestination => await accommodationRepository.GetByDestinationAsync(
+                request.SearchQuery,
                 request.Limit),
             
             _ => throw new InvalidOperationException("SearchType undefined")
         };
 
-        if (accommodations == null)
-        {
-            return [];
-        }
-
-        return accommodations.Select(x => new GetAccommodationResponse(
-            x.Id,
-            x.Name,
-            x.FullDestination,
-            x.AccommodationType,
-            x.Coordinate)).ToList();
+        return new GetAccommodationResponse(accommodations.Select(accommodation => new AccommodationDto(
+                accommodation.Id,
+                accommodation.Name,
+                accommodation.FullDestination,
+                accommodation.AccommodationType,
+                accommodation.Coordinate)
+            ).ToList()
+        );
     }
 }

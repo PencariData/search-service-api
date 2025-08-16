@@ -8,10 +8,9 @@ namespace SearchService.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AccommodationController(
-    IAccommodationService accommodationService,
-    ISearchSuggestionService searchSuggestionService) : ControllerBase
+    IAccommodationService accommodationService) : ControllerBase
 {
-    [HttpPost("/accommodations")]
+    [HttpPost("search")]
     [ProducesResponseType(typeof(ApiResponse<List<GetAccommodationResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
@@ -19,17 +18,6 @@ public class AccommodationController(
     {
         var result = await accommodationService.SearchAccommodationsAsync(request);
     
-        return Ok(ApiResponse<List<GetAccommodationResponse>>.Ok(result));
-    }
-
-    [HttpPost("/accommodations/suggestion")]
-    [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AccommodationSuggestion([FromQuery] GetAccommodationSuggestionRequest request)
-    {
-        var result = await searchSuggestionService.SearchAccommodationSuggestionsAsync(request);
-        
-        return  Ok(ApiResponse<List<string>>.Ok(result));
+        return Ok(ApiResponse<GetAccommodationResponse>.Ok(result));
     }
 }

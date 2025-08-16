@@ -16,8 +16,14 @@ public class AccommodationRepository(
     ILogger<AccommodationRepository> logger,
     ElasticConfiguration elasticConfiguration) : IAccommodationRepository
 {
-    
-    public async Task<IEnumerable<AccommodationEntity>?> GetByNameAsync(string name, int limit)
+    /// <summary>
+    /// Get accommodation documents that have match name property
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="limit"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task<IEnumerable<AccommodationEntity>> GetByNameAsync(string name, int limit)
     {
         var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
             .Indices(elasticConfiguration.AccommodationIndex)
@@ -45,7 +51,6 @@ public class AccommodationRepository(
         
         if (!string.IsNullOrWhiteSpace(searchResponse.ApiCallDetails.OriginalException.Message))
         {
-            // Transport layer failure (e.g., connection refused, timeout, DNS issue)
             throw new Exception(
                 "Failed to connect to Elasticsearch",
                 searchResponse.ApiCallDetails.OriginalException.InnerException 
@@ -59,12 +64,17 @@ public class AccommodationRepository(
             );
         }
 
-        // Unexpected error state
         throw new Exception("Unknown Elasticsearch error occurred");
-
     }
-
-    public async Task<IEnumerable<AccommodationEntity>?> GetByDestinationAsync(string destination, int limit)
+    
+    /// <summary>
+    /// Get accommodation documents that have match destination properties
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <param name="limit"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task<IEnumerable<AccommodationEntity>> GetByDestinationAsync(string destination, int limit)
     {
         var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
             .Indices(elasticConfiguration.AccommodationIndex)
@@ -91,11 +101,16 @@ public class AccommodationRepository(
 
         return searchResponse.Documents.Select(JsonToAccommodationMapper.Map);
     }
-
-    public async Task<IEnumerable<string>> GetHotelSuggestionsAsync(string name, int limit)
+    
+    /// <summary>
+    /// Get accommodation suggestions by its name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="limit"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task<IEnumerable<string>> GetSuggestionsByNameAsync(string name, int limit)
     {
-        logger.LogDebug("[Suggestions] Request started — name: '{Name}', limit: {Limit}", name, limit);
-
         var payload = new
         {
             size = 0,
@@ -113,9 +128,6 @@ public class AccommodationRepository(
                 }
             }
         };
-
-        logger.LogDebug("[Suggestions] Elasticsearch request payload:\n{Payload}",
-            JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
 
         using var http = new HttpClient();
         http.BaseAddress = new Uri(elasticConfiguration.ElasticUrl);
@@ -153,8 +165,6 @@ public class AccommodationRepository(
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct()
             .ToList();
-
-        logger.LogDebug("[Suggestions] Extracted results: {@Suggestions}", suggestions);
 
         return suggestions;
     }

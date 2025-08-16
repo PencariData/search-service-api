@@ -1,3 +1,4 @@
+using Elastic.Clients.Elasticsearch.Core.Reindex;
 using Microsoft.Extensions.DependencyInjection;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Infrastructure.Repositories;
@@ -11,5 +12,6 @@ public static class DependencyInjection
     {
         services.AddElasticSearch();
         services.AddScoped<IAccommodationRepository, AccommodationRepository>();
+        services.AddScoped<IDestinationRepository, DestinationRepository>();
     }
 }
