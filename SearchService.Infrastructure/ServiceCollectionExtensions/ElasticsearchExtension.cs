@@ -1,5 +1,4 @@
 using Elastic.Clients.Elasticsearch;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SearchService.Shared.Models;
 
@@ -17,5 +16,4 @@ public static class ElasticsearchExtension
             return new ElasticsearchClient(settings);
         });
     }
-
 }

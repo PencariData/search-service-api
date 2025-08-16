@@ -6,6 +6,8 @@ using Elastic.Clients.Elasticsearch.QueryDsl;
 using Microsoft.Extensions.Logging;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Domain.Entities;
+using SearchService.Domain.Enums;
+using SearchService.Domain.ValueObjects;
 using SearchService.Infrastructure.Helpers.Mapping;
 using SearchService.Shared.Models;
 
@@ -25,46 +27,59 @@ public class AccommodationRepository(
     /// <exception cref="Exception"></exception>
     public async Task<IEnumerable<AccommodationEntity>> GetByNameAsync(string name, int limit)
     {
-        var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
-            .Indices(elasticConfiguration.AccommodationIndex)
-            .Size(limit)
-            .Query(q => q
-                .Bool(b => b
-                    .Should(
-                        sh => sh.Term(t => t.Field("name.keyword").Value(name).Boost(5)),
-                        sh => sh.MultiMatch(m => m
-                            .Query(name)
-                            .Fields(new[] { "name", "name.keyword^3" })
-                            .Type(TextQueryType.BestFields)
-                            .Fuzziness(new Fuzziness("AUTO"))
-                        )
-                    )
-                )
-            )
-            .Sort(srt => srt.Score(sc => sc.Order(SortOrder.Desc)))
-        );
+        var payload = new
+        {
+            size = limit,
+            query = new
+            {
+                match = new
+                {
+                    name = new
+                    {
+                        query = name,
+                        fuzziness = "AUTO"
+                    }
+                }
+            }
+        };
 
-        if (searchResponse.IsValidResponse)
+        using var http = new HttpClient();
+        http.BaseAddress = new Uri(elasticConfiguration.ElasticUrl);
+
+        var response = await http.PostAsJsonAsync($"{elasticConfiguration.AccommodationIndex}/_search", payload);
+        var rawResponse = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
         {
-            return searchResponse.Documents.Select(JsonToAccommodationMapper.Map);
-        }
-        
-        if (!string.IsNullOrWhiteSpace(searchResponse.ApiCallDetails.OriginalException.Message))
-        {
-            throw new Exception(
-                "Failed to connect to Elasticsearch",
-                searchResponse.ApiCallDetails.OriginalException.InnerException 
-            );
+            throw new Exception($"Elasticsearch query failed: {response.StatusCode} - {rawResponse}");
         }
 
-        if (!string.IsNullOrWhiteSpace(searchResponse.ElasticsearchServerError.Error.Reason))
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(rawResponse));
+        using var jsonDoc = await JsonDocument.ParseAsync(stream);
+
+        // Navigate to hits.hits array
+        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement) ||
+            !hitsElement.TryGetProperty("hits", out var hitsArray) ||
+            hitsArray.GetArrayLength() == 0)
         {
-            throw new Exception(
-                $"Elasticsearch query failed: {searchResponse.ElasticsearchServerError.Error.Reason}"
-            );
+            logger.LogWarning("[Search] No matches found for name: '{Name}'", name);
+            return [];
         }
 
-        throw new Exception("Unknown Elasticsearch error occurred");
+        var results = new List<AccommodationEntity>();
+
+        foreach (var hit in hitsArray.EnumerateArray())
+        {
+            if (!hit.TryGetProperty("_source", out var source))
+                continue;
+
+            // Wrap the _source JSON element in a JsonDocument
+            using var sourceDoc = JsonDocument.Parse(source.GetRawText());
+            var entity = JsonToAccommodationMapper.Map(sourceDoc);
+            results.Add(entity);
+        }
+
+        return results;
     }
     
     /// <summary>
@@ -76,30 +91,59 @@ public class AccommodationRepository(
     /// <exception cref="Exception"></exception>
     public async Task<IEnumerable<AccommodationEntity>> GetByDestinationAsync(string destination, int limit)
     {
-        var searchResponse = await elasticClient.SearchAsync<JsonDocument>(s => s
-            .Indices(elasticConfiguration.AccommodationIndex)
-            .Size(limit)
-            .Query(q => q
-                .MultiMatch(m => m
-                    .Query(destination)
-                    .Fields(new[]
+        var payload = new
+        {
+            size = limit,
+            query = new
+            {
+                match = new
+                {
+                    destinationName = new
                     {
-                        "country",
-                        "administrationLevel1",
-                        "administrationLevel2",
-                        "fullDestination^2" // boost full destination
-                    })
-                    .Type(TextQueryType.BestFields)
-                    .Fuzziness(new Fuzziness("AUTO"))
-                )
-            )
-            .Sort(srt => srt.Score(sc => sc.Order(SortOrder.Desc)))
-        );
+                        query = destination,
+                        fuzziness = "AUTO"
+                    }
+                }
+            }
+        };
 
-        if (!searchResponse.IsValidResponse)
-            throw new Exception($"Elasticsearch query failed: {searchResponse.ElasticsearchServerError.Error.Reason}");
+        using var http = new HttpClient();
+        http.BaseAddress = new Uri(elasticConfiguration.ElasticUrl);
 
-        return searchResponse.Documents.Select(JsonToAccommodationMapper.Map);
+        var response = await http.PostAsJsonAsync($"{elasticConfiguration.AccommodationIndex}/_search", payload);
+        var rawResponse = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Elasticsearch query failed: {response.StatusCode} - {rawResponse}");
+        }
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(rawResponse));
+        using var jsonDoc = await JsonDocument.ParseAsync(stream);
+
+        // Navigate to hits.hits array
+        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement) ||
+            !hitsElement.TryGetProperty("hits", out var hitsArray) ||
+            hitsArray.GetArrayLength() == 0)
+        {
+            logger.LogWarning("[Search] No matches found for destination: '{Destination}'", destination);
+            return [];
+        }
+
+        var results = new List<AccommodationEntity>();
+
+        foreach (var hit in hitsArray.EnumerateArray())
+        {
+            if (!hit.TryGetProperty("_source", out var source))
+                continue;
+
+            // Wrap the _source JSON element in a JsonDocument
+            using var sourceDoc = JsonDocument.Parse(source.GetRawText());
+            var entity = JsonToAccommodationMapper.Map(sourceDoc);
+            results.Add(entity);
+        }
+
+        return results;
     }
     
     /// <summary>

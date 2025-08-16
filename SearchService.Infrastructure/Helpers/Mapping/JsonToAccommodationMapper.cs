@@ -14,9 +14,7 @@ public static class JsonToAccommodationMapper
         // Extract basic properties
         var id = root.GetProperty("id").GetGuid();
         var name = root.GetProperty("name").GetString() ?? "";
-        var country = root.GetProperty("country").GetString() ?? "";
-        var adminLevel1 = root.GetProperty("administrationLevel1").GetString() ?? "";
-        var adminLevel2 = root.GetProperty("administrationLevel2").GetString() ?? "";
+        var destinationName = root.GetProperty("destinationName").GetString() ?? "";
         var fullDestination = root.GetProperty("fullDestination").GetString() ?? "";
         var accommodationType = root.GetProperty("accommodationType").GetString() ?? "";
         
@@ -29,9 +27,7 @@ public static class JsonToAccommodationMapper
         return AccommodationEntity.Create(
             id: id,
             name: name,
-            country: country,
-            administrationLevel1: adminLevel1,
-            administrationLevel2: adminLevel2,
+            destinationName: destinationName,
             fullDestination: fullDestination,
             accommodationType: accommodationTypeEnum,
             coordinate: coordinate
