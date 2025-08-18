@@ -22,7 +22,7 @@ public class SearchSuggestionService(
         
         // Get accommodation suggestion
         var accommodationSuggestions =
-            await accommodationRepository.GetSuggestionsByNameAsync(request.Query, request.Limit);
+            await accommodationRepository.GetSuggestionsAsync(request.Query, request.Limit);
         
         // Get destination suggestion 
         var destinationSuggestions =

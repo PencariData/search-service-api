@@ -22,11 +22,18 @@ public class AccommodationService(
 
         var accommodations = request.AccommodationSearchType switch
         {
-            AccommodationSearchType.ByName => await accommodationRepository.GetByNameAsync(
+            AccommodationSearchType.FreeSearch => await accommodationRepository.GetByMultipleFieldAsync(
+                ["destinationName.ngram", "name.ngram"],
                 request.SearchQuery,
                 request.Limit),
             
-            AccommodationSearchType.ByDestination => await accommodationRepository.GetByDestinationAsync(
+            AccommodationSearchType.ByDestination => await accommodationRepository.GetByFieldAsync(
+                "destinationName",
+                request.SearchQuery,
+                request.Limit),
+            
+            AccommodationSearchType.ByName => await accommodationRepository.GetByFieldAsync(
+                "name",
                 request.SearchQuery,
                 request.Limit),
             

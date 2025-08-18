@@ -25,9 +25,13 @@ public class DestinationRepository(
                     prefix = query,
                     completion = new
                     {
-                        field = "name",
+                        field = "name_suggest",
                         skip_duplicates = true,
-                        size = limit
+                        size = limit,
+                        fuzzy = new
+                        {
+                            fuzziness = 2
+                        }
                     }
                 }
             }

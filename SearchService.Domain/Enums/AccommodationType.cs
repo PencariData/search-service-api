@@ -2,9 +2,9 @@ namespace SearchService.Domain.Enums;
 
 public enum AccommodationType
 {
-    Hotel = 0,
-    Resort = 1,
-    Apartment = 2,
+    Hotel = 1,
+    Resort = 2, 
     Villa = 3,
-    Undefined =4
+    Apartment = 4,
+    Guesthouse = 5
 }
