@@ -28,8 +28,14 @@ A **search service API** for accommodation data, built as a learning project to 
 
 ### Build & Run
 
+Build and seeding 
 ```bash
-dotnet build
+dotnet build 
+dotnet run --project SearchService.API --seed
+```
+
+Run the API service
+```bash
 dotnet run
 ```
 
@@ -49,4 +55,3 @@ You could check the API documentation on http://localhost:5125/swagger/index.htm
 
 - Implement caching for frequently searched queries
 - Enhance filtering options and search relevance scoring
-- Implement data seeding for accommodation and destinations
