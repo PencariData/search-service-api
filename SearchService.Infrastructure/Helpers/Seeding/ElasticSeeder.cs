@@ -172,7 +172,8 @@ public class ElasticSeeder(
                 Name = "Royal Jakarta Hotel",
                 NameSuggest = new NameSuggest
                 {
-                    Input = new[] { "Royal", "Jakarta", "Hotel", "Royal Jakarta", "Royal Hotel", "Jakarta Hotel", "Royal Jakarta Hotel" }
+                    Input = ["Royal", "Jakarta", "Hotel", "Royal Jakarta", "Royal Hotel", "Jakarta Hotel", "Royal Jakarta Hotel"
+                    ]
                 },
                 DestinationId = "d1",
                 DestinationName = "Jakarta",
@@ -186,7 +187,8 @@ public class ElasticSeeder(
                 Name = "Bandung Mountain Resort",
                 NameSuggest = new NameSuggest
                 {
-                    Input = new[] { "Bandung", "Mountain", "Resort", "Bandung Mountain", "Bandung Resort", "Mountain Resort", "Bandung Mountain Resort" }
+                    Input = ["Bandung", "Mountain", "Resort", "Bandung Mountain", "Bandung Resort", "Mountain Resort", "Bandung Mountain Resort"
+                    ]
                 },
                 DestinationId = "d2",
                 DestinationName = "Bandung",
@@ -200,7 +202,8 @@ public class ElasticSeeder(
                 Name = "Yogyakarta Boutique Villa",
                 NameSuggest = new NameSuggest
                 {
-                    Input = new[] { "Yogyakarta", "Boutique", "Villa", "Yogyakarta Boutique", "Yogyakarta Villa", "Boutique Villa", "Yogyakarta Boutique Villa" }
+                    Input = ["Yogyakarta", "Boutique", "Villa", "Yogyakarta Boutique", "Yogyakarta Villa", "Boutique Villa", "Yogyakarta Boutique Villa"
+                    ]
                 },
                 DestinationId = "d4",
                 DestinationName = "Yogyakarta",
@@ -214,7 +217,8 @@ public class ElasticSeeder(
                 Name = "Yogyakarta Heritage Villa",
                 NameSuggest = new NameSuggest
                 {
-                    Input = new[] { "Yogyakarta", "Heritage", "Villa", "Yogyakarta Heritage", "Yogyakarta Villa", "Heritage Villa", "Yogyakarta Heritage Villa" }
+                    Input = ["Yogyakarta", "Heritage", "Villa", "Yogyakarta Heritage", "Yogyakarta Villa", "Heritage Villa", "Yogyakarta Heritage Villa"
+                    ]
                 },
                 DestinationId = "d4",
                 DestinationName = "Yogyakarta",
@@ -238,7 +242,7 @@ public class ElasticSeeder(
             {
                 Id = "d1",
                 Name = "Jakarta",
-                NameSuggest = new NameSuggest { Input = new[] { "Jakarta" } },
+                NameSuggest = new NameSuggest { Input = ["Jakarta"] },
                 FullName = "Jakarta, DKI Jakarta, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.2088, Lon = 106.8456 },
                 AccommodationCount = 1
@@ -247,7 +251,7 @@ public class ElasticSeeder(
             {
                 Id = "d2",
                 Name = "Bandung",
-                NameSuggest = new NameSuggest { Input = new[] { "Bandung" } },
+                NameSuggest = new NameSuggest { Input = ["Bandung"] },
                 FullName = "Bandung, West Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.9175, Lon = 107.6191 },
                 AccommodationCount = 2
@@ -256,7 +260,7 @@ public class ElasticSeeder(
             {
                 Id = "d3",
                 Name = "Surabaya",
-                NameSuggest = new NameSuggest { Input = new[] { "Surabaya" } },
+                NameSuggest = new NameSuggest { Input = ["Surabaya"] },
                 FullName = "Surabaya, East Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -7.2575, Lon = 112.7521 },
                 AccommodationCount = 2
@@ -265,7 +269,7 @@ public class ElasticSeeder(
             {
                 Id = "d4",
                 Name = "Yogyakarta",
-                NameSuggest = new NameSuggest { Input = new[] { "Yogyakarta" } },
+                NameSuggest = new NameSuggest { Input = ["Yogyakarta"] },
                 FullName = "Yogyakarta, Special Region of Yogyakarta, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -7.7956, Lon = 110.3695 },
                 AccommodationCount = 2
@@ -274,7 +278,7 @@ public class ElasticSeeder(
             {
                 Id = "d5",
                 Name = "Malang",
-                NameSuggest = new NameSuggest { Input = new[] { "Malang" } },
+                NameSuggest = new NameSuggest { Input = ["Malang"] },
                 FullName = "Malang, East Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -7.9825, Lon = 112.6303 },
                 AccommodationCount = 1
@@ -283,7 +287,7 @@ public class ElasticSeeder(
             {
                 Id = "d6",
                 Name = "Semarang",
-                NameSuggest = new NameSuggest { Input = new[] { "Semarang" } },
+                NameSuggest = new NameSuggest { Input = ["Semarang"] },
                 FullName = "Semarang, Central Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.9667, Lon = 110.4167 },
                 AccommodationCount = 1
@@ -292,7 +296,7 @@ public class ElasticSeeder(
             {
                 Id = "d7",
                 Name = "Bogor",
-                NameSuggest = new NameSuggest { Input = new[] { "Bogor" } },
+                NameSuggest = new NameSuggest { Input = ["Bogor"] },
                 FullName = "Bogor, West Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.5950, Lon = 106.8167 },
                 AccommodationCount = 1
@@ -301,7 +305,7 @@ public class ElasticSeeder(
             {
                 Id = "d8",
                 Name = "Depok",
-                NameSuggest = new NameSuggest { Input = new[] { "Depok" } },
+                NameSuggest = new NameSuggest { Input = ["Depok"] },
                 FullName = "Depok, West Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.4025, Lon = 106.7949 },
                 AccommodationCount = 1
@@ -310,7 +314,7 @@ public class ElasticSeeder(
             {
                 Id = "d9",
                 Name = "Tangerang",
-                NameSuggest = new NameSuggest { Input = new[] { "Tangerang" } },
+                NameSuggest = new NameSuggest { Input = ["Tangerang"] },
                 FullName = "Tangerang, Banten, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -6.1783, Lon = 106.6319 },
                 AccommodationCount = 1
@@ -319,7 +323,7 @@ public class ElasticSeeder(
             {
                 Id = "d10",
                 Name = "Solo",
-                NameSuggest = new NameSuggest { Input = new[] { "Solo" } },
+                NameSuggest = new NameSuggest { Input = ["Solo"] },
                 FullName = "Solo, Central Java, Indonesia",
                 CenterCoordinate = new GeoPoint { Lat = -7.5754, Lon = 110.8240 },
                 AccommodationCount = 1

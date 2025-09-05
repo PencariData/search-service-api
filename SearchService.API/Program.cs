@@ -16,6 +16,9 @@ builder.Services.AddShared(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
+// Cache
+builder.Services.AddMemoryCache();
+
 // Add CORS policy
 builder.Services.AddCors(options =>
 {

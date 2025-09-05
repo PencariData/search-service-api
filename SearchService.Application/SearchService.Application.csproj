@@ -8,11 +8,13 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SearchService.Domain\SearchService.Domain.csproj" />
+      <ProjectReference Include="..\SearchService.Shared\SearchService.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FluentValidation" Version="12.0.0" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.2" />
     </ItemGroup>
 
 </Project>

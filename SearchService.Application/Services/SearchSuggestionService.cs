@@ -1,7 +1,11 @@
 using FluentValidation;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
+using SearchService.Shared.Extensions;
+using SearchService.Shared.Models;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace SearchService.Application.Services;
@@ -9,7 +13,10 @@ namespace SearchService.Application.Services;
 public class SearchSuggestionService(
     IAccommodationRepository accommodationRepository,
     IDestinationRepository destinationRepository,
-    IValidator<GetSuggestionRequest> getSuggestionValidator) : ISearchSuggestionService
+    IValidator<GetSuggestionRequest> getSuggestionValidator,
+    IMemoryCache cache,
+    CachingOptions cachingOptions,
+    ILogger<SearchSuggestionService> logger) : ISearchSuggestionService
 {
     public async Task<GetSuggestionResponse> GetSuggestionsAsync(GetSuggestionRequest request)
     {
@@ -18,6 +25,14 @@ public class SearchSuggestionService(
         if (!validationResult.IsValid)
         {
             throw new ValidationException(validationResult.Errors);
+        }
+
+        var cacheKey = $"suggestion:{request.Query}";
+
+        if (cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var suggestion))
+        {
+            if (suggestion != null) 
+                return suggestion;
         }
         
         // Get accommodation suggestion
@@ -28,9 +43,13 @@ public class SearchSuggestionService(
         var destinationSuggestions =
             await destinationRepository.GetDestinationSuggestionsAsync(request.Query, request.Limit);
         
-        // Return 
-        return new GetSuggestionResponse(
+        var response = new GetSuggestionResponse(
             accommodationSuggestions.ToList(), 
             destinationSuggestions.ToList());
+        
+        // Cache the result
+        cache.SetWithConfig(cacheKey, response, cachingOptions.SuggestionCacheDurationMinutes);
+        
+        return  response;
     }
 }

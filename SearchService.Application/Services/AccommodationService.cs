@@ -1,14 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Caching.Memory;
 using SearchService.Application.Dto;
 using SearchService.Application.Enums;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
+using SearchService.Shared.Extensions;
+using SearchService.Shared.Models;
 
 namespace SearchService.Application.Services;
 
 public class AccommodationService(
     IAccommodationRepository accommodationRepository,
-    IValidator<GetAccommodationRequest> validator)
+    IValidator<GetAccommodationRequest> validator,
+    IMemoryCache cache,
+    CachingOptions cachingOptions)
     : IAccommodationService
 {
     public async Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request)
@@ -18,6 +23,14 @@ public class AccommodationService(
         if (!validationResult.IsValid)
         {
             throw new ValidationException(validationResult.Errors);
+        }
+
+        var cacheKey = $"search:{request.SearchQuery}{request.AccommodationSearchType}";
+        
+        if (cache.TryGetValue<GetAccommodationResponse>(cacheKey, out var searchResult))
+        {
+            if (searchResult != null) 
+                return searchResult;
         }
 
         var accommodations = request.AccommodationSearchType switch
@@ -40,7 +53,7 @@ public class AccommodationService(
             _ => throw new InvalidOperationException("SearchType undefined")
         };
 
-        return new GetAccommodationResponse(accommodations.Select(accommodation => new AccommodationDto(
+        var response = new GetAccommodationResponse(accommodations.Select(accommodation => new AccommodationDto(
                 accommodation.Id,
                 accommodation.Name,
                 accommodation.FullDestination,
@@ -48,5 +61,9 @@ public class AccommodationService(
                 accommodation.Coordinate)
             ).ToList()
         );
+        
+        cache.SetWithConfig(cacheKey, response, cachingOptions.SuggestionCacheDurationMinutes);
+
+        return response;
     }
 }
