@@ -5,6 +5,7 @@ using SearchService.Application.Interfaces.Services;
 
 namespace SearchService.API.Controllers;
 
+
 [ApiController]
 [Route("api/[controller]")]
 public class SuggestionController

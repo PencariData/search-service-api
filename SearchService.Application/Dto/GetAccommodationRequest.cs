@@ -6,7 +6,9 @@ namespace SearchService.Application.Dto;
 public record GetAccommodationRequest(
     string SearchQuery,
     AccommodationSearchType AccommodationSearchType,
-    int Limit
+    int Limit,
+    int Page,
+    Guid? SearchId
 );
 
 public class GetAccommodationRequestValidator : AbstractValidator<GetAccommodationRequest>
@@ -24,5 +26,8 @@ public class GetAccommodationRequestValidator : AbstractValidator<GetAccommodati
         RuleFor(x => x.AccommodationSearchType)
             .IsInEnum()
             .WithMessage("SearchType must be a valid value.");
+
+        RuleFor(x => x.Page)
+            .GreaterThan(-1);
     }
 }

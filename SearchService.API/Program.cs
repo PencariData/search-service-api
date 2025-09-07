@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen();
 // Dependency Injection
 builder.Services.AddShared(builder.Configuration);
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Cache
 builder.Services.AddMemoryCache();
@@ -53,7 +53,7 @@ if (args.Contains("--seed"))
 // Use CORS middleware (important: before UseRouting)
 app.UseCors("AllowNuxtApp");
 
-app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

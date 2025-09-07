@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -26,13 +27,21 @@ public class SearchSuggestionService(
         {
             throw new ValidationException(validationResult.Errors);
         }
+        
+        var sw = Stopwatch.StartNew();
 
         var cacheKey = $"suggestion:{request.Query}";
 
         if (cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var suggestion))
         {
-            if (suggestion != null) 
+            if (suggestion != null)
+            {
+                sw.Stop();
+                logger.LogInformation("Total process time : {SwElapsedMilliseconds}", sw.ElapsedMilliseconds);
+                
+                // Log search event
                 return suggestion;
+            }
         }
         
         // Get accommodation suggestion
@@ -46,6 +55,10 @@ public class SearchSuggestionService(
         var response = new GetSuggestionResponse(
             accommodationSuggestions.ToList(), 
             destinationSuggestions.ToList());
+        
+        // Log search event
+        sw.Stop(); 
+        logger.LogInformation("Total process time : {SwElapsedMilliseconds}", sw.ElapsedMilliseconds);
         
         // Cache the result
         cache.SetWithConfig(cacheKey, response, cachingOptions.SuggestionCacheDurationMinutes);

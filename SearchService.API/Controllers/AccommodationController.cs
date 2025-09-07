@@ -20,4 +20,10 @@ public class AccommodationController(
     
         return Ok(ApiResponse<GetAccommodationResponse>.Ok(result));
     }
+
+    [HttpPost("click")]
+    public Task<IActionResult> AccommodationClick([FromBody] PostAccommodationClickRequest request)
+    {
+        throw new NotImplementedException();
+    }
 }

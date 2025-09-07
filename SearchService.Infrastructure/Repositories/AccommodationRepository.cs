@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Domain.Entities;
 using SearchService.Infrastructure.Helpers.HttpRequestHandler;
@@ -20,9 +21,10 @@ public class AccommodationRepository(
     /// <param name="query"></param>
     /// <param name="limit"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<AccommodationEntity>> GetByFieldAsync(string field, string query, int limit)
+    public async Task<SearchResultDto<AccommodationEntity>> GetByFieldAsync(string field, string query, int page, int limit)
     {   var payload = new
         {
+            from = page * limit,
             size = limit,
             query = new
             {
@@ -35,12 +37,17 @@ public class AccommodationRepository(
 
         var jsonDoc = await elasticsearchRequestHelper.SearchAsync(elasticConfiguration.AccommodationIndex, payload);
 
-        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement) ||
-            !hitsElement.TryGetProperty("hits", out var hitsArray) ||
-            hitsArray.GetArrayLength() == 0)
+        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement))
         {
             logger.LogWarning("[Search] No matches found for {Field}: '{Query}'", field, query);
-            return [];
+            return new SearchResultDto<AccommodationEntity>([], 0);
+        }
+
+        var total = hitsElement.GetProperty("total").GetProperty("value").GetInt32();
+
+        if (!hitsElement.TryGetProperty("hits", out var hitsArray) || hitsArray.GetArrayLength() == 0)
+        {
+            return new SearchResultDto<AccommodationEntity>([], total);
         }
 
         var results = hitsArray
@@ -53,7 +60,7 @@ public class AccommodationRepository(
             })
             .ToList();
 
-        return results;
+        return new SearchResultDto<AccommodationEntity>(results, total);    
     }
     
     /// <summary>
@@ -64,11 +71,12 @@ public class AccommodationRepository(
     /// <param name="limit"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async Task<IEnumerable<AccommodationEntity>> GetByMultipleFieldAsync(List<string> fields, string query, int limit)
+    public async Task<SearchResultDto<AccommodationEntity>> GetByMultipleFieldAsync(List<string> fields, string query, int page, int limit)
     {
         
         var payload = new
         {
+            from = page * limit,
             size = limit,
             query = new
             {
@@ -83,12 +91,17 @@ public class AccommodationRepository(
 
         var jsonDoc = await elasticsearchRequestHelper.SearchAsync(elasticConfiguration.AccommodationIndex, payload);
 
-        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement) ||
-            !hitsElement.TryGetProperty("hits", out var hitsArray) ||
-            hitsArray.GetArrayLength() == 0)
+        if (!jsonDoc.RootElement.TryGetProperty("hits", out var hitsElement))
         {
-            logger.LogWarning("[Search] No matches found for query: '{Query}'", query);
-            return [];
+            logger.LogWarning("[Search] No matches found for {Field}: '{Query}'", fields, query);
+            return new SearchResultDto<AccommodationEntity>([], 0);
+        }
+
+        var total = hitsElement.GetProperty("total").GetProperty("value").GetInt32();
+
+        if (!hitsElement.TryGetProperty("hits", out var hitsArray) || hitsArray.GetArrayLength() == 0)
+        {
+            return new SearchResultDto<AccommodationEntity>([], total);
         }
 
         var results = hitsArray
@@ -101,7 +114,7 @@ public class AccommodationRepository(
             })
             .ToList();
 
-        return results;
+        return new SearchResultDto<AccommodationEntity>(results, total);
     }
 
     /// <summary>

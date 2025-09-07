@@ -3,4 +3,6 @@ using SearchService.Domain.ValueObjects;
 
 namespace SearchService.Application.Dto;
 
-public record GetAccommodationResponse(List<AccommodationDto> Accommodations);
+public record GetAccommodationResponse(
+    SearchMetaDto Meta,
+    List<AccommodationDto> Accommodations);

@@ -12,7 +12,7 @@ public static class JsonToAccommodationMapper
         var root = document.RootElement;
         
         // Extract basic properties
-        var id = Guid.Empty;
+        var id = Guid.Parse(root.GetProperty("id").GetString() ?? string.Empty);
         var name = root.GetProperty("name").GetString() ?? "";
         var destinationName = root.GetProperty("destinationName").GetString() ?? "";
         var fullDestination = root.GetProperty("fullDestination").GetString() ?? "";
