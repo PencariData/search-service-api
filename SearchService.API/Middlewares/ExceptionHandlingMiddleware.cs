@@ -1,5 +1,6 @@
-using SearchService.API.Responses;
 using FluentValidation;
+using SearchService.API.Responses;
+using SearchService.Application.Exceptions;
 
 namespace SearchService.API.Middlewares;
 
@@ -17,16 +18,49 @@ public class ExceptionHandlingMiddleware(
         {
             logger.LogWarning(ex, "Validation failed");
 
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(ApiResponse<string>.Fail("Validation error")
-                with { Errors = ex.Errors.Select(e => e.ErrorMessage).ToList() });
+            var response = ApiResponse<string>.Fail(
+                ex.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"),
+                "Validation failed",
+                context.TraceIdentifier
+            );
+
+            await WriteResponse(context, StatusCodes.Status400BadRequest, response);
+        }
+        catch (NotFoundException ex)
+        {
+            logger.LogWarning(ex, "Resource not found");
+
+            var response = ApiResponse<string>.Fail(ex.Message, context.TraceIdentifier);
+            await WriteResponse(context, StatusCodes.Status404NotFound, response);
+        }
+        catch (UnauthorizedException ex)
+        {
+            logger.LogWarning(ex, "Unauthorized request");
+
+            var response = ApiResponse<string>.Fail(ex.Message, context.TraceIdentifier);
+            await WriteResponse(context, StatusCodes.Status401Unauthorized, response);
+        }
+        catch (ForbiddenException ex)
+        {
+            logger.LogWarning(ex, "Forbidden request");
+
+            var response = ApiResponse<string>.Fail(ex.Message, context.TraceIdentifier);
+            await WriteResponse(context, StatusCodes.Status403Forbidden, response);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception");
+            var traceId = context.TraceIdentifier;
+            logger.LogError(ex, "Unhandled exception with TraceId {TraceId}", traceId);
 
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsJsonAsync(ApiResponse<string>.Fail("An unexpected error occurred."));
+            var response = ApiResponse<string>.FromException(ex, traceId, "An unexpected error occurred.");
+            await WriteResponse(context, StatusCodes.Status500InternalServerError, response);
         }
+    }
+    
+    private static async Task WriteResponse<T>(HttpContext context, int statusCode, ApiResponse<T> response)
+    {
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(response);
     }
 }

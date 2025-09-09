@@ -23,26 +23,87 @@ public class AccommodationService(
 {
     public async Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request)
     {
-        // Validation data
+        // Validate request
+        await ValidateRequest(request);
+
+        // Determine log validity
+        var (logValidity, invalidReason) = DeriveLogContextValidity(request);
+
+        // Resolve searchId
+        var searchId = await ResolveSearchId(request);
+
+        // Try cache
+        var cacheKey = $"search:{request.SearchQuery}:{request.Page}:{request.AccommodationSearchType}";
+        var cacheData = CacheLookup(cacheKey, request, logValidity, invalidReason, searchId);
+        if (cacheData != null)
+            return cacheData;
+
+        // Search
+        var stopwatch = Stopwatch.StartNew();
+        var searchResult = await SearchAccommodation(request);
+        var elapsedMs = stopwatch.ElapsedMilliseconds;
+
+        // Map results
+        var dtoList = searchResult.Results.Select(MapToDto).ToList();
+
+        var response = new GetAccommodationResponse(
+            Meta: new SearchMetaDto(
+                SearchId: searchId,
+                Page: request.Page,
+                ResulCount: dtoList.Count,
+                TotalResult: searchResult.Total
+            ),
+            Accommodations: dtoList
+        );
+
+        // Log
+        var logContext = new LogContext(
+            SearchId: searchId,
+            Request: request,
+            Page: request.Page,
+            ResultCount: dtoList.Count,
+            TotalResultCount: searchResult.Total,
+            FromCache: false,
+            ElapsedMs: elapsedMs,
+            Validity: logValidity,
+            InvalidReason: invalidReason
+        );
+
+        EnqueueLog(logContext);
+
+        // Cache
+        cache.SetWithConfig(cacheKey, response, cachingOptions.ResultCacheDurationMinutes);
+
+        return response;
+    }
+    
+    #region Private Methods
+    private async Task ValidateRequest(GetAccommodationRequest request)
+    {
         var validationResult = await validator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             throw new ValidationException(validationResult.Errors);
         }
-
-        var logValidity = LogValidity.Valid;
-        string? invalidReason = null;
-        
+    }
+    
+    private (LogValidity logValidity, string? invalidReason) DeriveLogContextValidity(GetAccommodationRequest request)
+    {
         if (request.SearchId == null && request.Page > 0)
         {
-            logValidity = LogValidity.Suspect;
-            invalidReason = "Missing searchId on non-first page";
+            return (LogValidity.Suspect, "Missing searchId on non-first page");
         }
-        
+
+        return (LogValidity.Valid, null);
+    }
+    
+    private async Task<Guid> ResolveSearchId(GetAccommodationRequest request)
+    {
         var searchId = request.SearchId;
 
         if (request.SearchId != null)
         {
+            // Assign new SearchId if the searchId have different searchQuery property
             var existingSearchLog = await logRepository.GetSearchLogBySearchIdAsync(request.SearchId.Value);
             if (existingSearchLog != null &&  existingSearchLog.SearchQuery != request.SearchQuery)
             {
@@ -53,17 +114,40 @@ public class AccommodationService(
         {
             searchId = Guid.NewGuid();
         }
-        
-        // Cache lookups
-        var cacheKey = $"search:{request.SearchQuery}:{request.Page}:{request.AccommodationSearchType}";
+
+        return searchId!.Value;
+    }
+
+    private GetAccommodationResponse? CacheLookup(
+        string cacheKey,
+        GetAccommodationRequest request,
+        LogValidity logValidity,
+        string? invalidReason,
+        Guid searchId)
+    {
         if (cache.TryGetValue<GetAccommodationResponse>(cacheKey, out var cachedResponse))
         {
-            EnqueueLog(searchId!.Value, request, request.Page,cachedResponse!.Meta.ResulCount, cachedResponse.Meta.TotalResult,true, 0, logValidity, invalidReason);
+            var logContext = new LogContext(
+                SearchId: searchId,
+                Request: request,
+                Page: request.Page,
+                ResultCount: cachedResponse!.Meta.ResulCount,
+                TotalResultCount: cachedResponse.Meta.TotalResult,
+                FromCache: true,
+                ElapsedMs: 0,
+                Validity: logValidity,
+                InvalidReason: invalidReason
+            );
+
+            EnqueueLog(logContext);
             return cachedResponse;
         }
-        
-        // Search execution
-        var timer = Stopwatch.StartNew();
+
+        return null;
+    }
+    
+    private async Task<SearchResultDto<AccommodationEntity>> SearchAccommodation(GetAccommodationRequest request)
+    {
         var searchResult = request.AccommodationSearchType switch
         {
             AccommodationSearchType.FreeSearch => await accommodationRepository.GetByMultipleFieldAsync(
@@ -86,49 +170,44 @@ public class AccommodationService(
             
             _ => throw new InvalidOperationException("SearchType undefined")
         };
-        timer.Stop();
-        
-        // Mapping
-        var dtoList = searchResult.Results.Select(MapToDto).ToList();
 
-        // Meta & Response
-        var response = new GetAccommodationResponse(
-            Meta: new SearchMetaDto(
-                SearchId: searchId!.Value,
-                Page: request.Page,
-                ResulCount: dtoList.Count,
-                TotalResult: searchResult.Total
-            ),
-            Accommodations: dtoList
-        );
-        
-        // Logging
-        EnqueueLog(searchId.Value, request, request.Page, dtoList.Count, dtoList.Count, false, timer.ElapsedMilliseconds, logValidity, invalidReason);
-        
-        // Cache Store
-        cache.SetWithConfig(cacheKey, response, cachingOptions.ResultCacheDurationMinutes);
-
-        return response;
+        return searchResult;
     }
     
     private static AccommodationDto MapToDto(AccommodationEntity entity) =>
         new(entity.Id, entity.Name, entity.FullDestination, entity.AccommodationType, entity.Coordinate);
 
-    private void EnqueueLog(Guid searchId, GetAccommodationRequest request,int page, int resultCount, int totalResultCount, bool fromCache, long elapsedMs, LogValidity validity, string? invalidReason) =>
+    private void EnqueueLog(LogContext context) =>
         logQueueService.Enqueue(SearchLogEntity.Create(
-            searchId,
+            context.SearchId,
             DateTime.UtcNow,
-            request.SearchQuery,
-            request.AccommodationSearchType.ToString(),
-            page,
-            resultCount,
-            totalResultCount,
-            fromCache,
-            elapsedMs,
+            context.Request.SearchQuery,
+            context.Request.AccommodationSearchType.ToString(),
+            context.Page,
+            context.ResultCount,
+            context.TotalResultCount,
+            context.FromCache,
+            context.ElapsedMs,
             null,
             null,
             null,
-            validity,
-            invalidReason
+            context.Validity,
+            context.InvalidReason
         ));
+    
+    #endregion
+    
+    #region Data Model
+    private record LogContext(
+        Guid SearchId,
+        GetAccommodationRequest Request,
+        int Page,
+        int ResultCount,
+        int TotalResultCount,
+        bool FromCache,
+        long ElapsedMs,
+        LogValidity Validity,
+        string? InvalidReason
+    );
+    #endregion
 }
