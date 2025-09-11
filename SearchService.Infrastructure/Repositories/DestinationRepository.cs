@@ -13,8 +13,6 @@ public class DestinationRepository(
 {
     public async Task<IEnumerable<string>> GetDestinationSuggestionsAsync(string query, int limit)
     {
-         logger.LogDebug("[Suggestions] Request started — name: '{Name}', limit: {Limit}", query, limit);
-
         var payload = new
         {
             size = 0,

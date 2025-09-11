@@ -12,8 +12,7 @@ public static class BackgroundServiceExtension
     public static void AddBackgroundServices(this IServiceCollection services)
     {
         services.AddSingleton(Channel.CreateUnbounded<SearchLogEntity>());
-        services.AddHostedService<SearchLogBackgroundService>();
-
         services.AddSingleton<ILogQueueService, LogQueueService>();
+        services.AddHostedService<SearchLogBackgroundService>();
     }
 }

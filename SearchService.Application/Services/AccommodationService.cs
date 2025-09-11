@@ -24,7 +24,7 @@ public class AccommodationService(
     public async Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request)
     {
         // Validate request
-        await ValidateRequest(request);
+        await validator.ValidateAndThrowAsync(request);
 
         // Determine log validity
         var (logValidity, invalidReason) = DeriveLogContextValidity(request);
@@ -69,7 +69,7 @@ public class AccommodationService(
             InvalidReason: invalidReason
         );
 
-        EnqueueLog(logContext);
+        EnqueueLog(logContext); // Log search using search
 
         // Cache
         cache.SetWithConfig(cacheKey, response, cachingOptions.ResultCacheDurationMinutes);
@@ -78,14 +78,6 @@ public class AccommodationService(
     }
     
     #region Private Methods
-    private async Task ValidateRequest(GetAccommodationRequest request)
-    {
-        var validationResult = await validator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-        {
-            throw new ValidationException(validationResult.Errors);
-        }
-    }
     
     private (LogValidity logValidity, string? invalidReason) DeriveLogContextValidity(GetAccommodationRequest request)
     {
@@ -125,25 +117,25 @@ public class AccommodationService(
         string? invalidReason,
         Guid searchId)
     {
-        if (cache.TryGetValue<GetAccommodationResponse>(cacheKey, out var cachedResponse))
-        {
-            var logContext = new LogContext(
-                SearchId: searchId,
-                Request: request,
-                Page: request.Page,
-                ResultCount: cachedResponse!.Meta.ResulCount,
-                TotalResultCount: cachedResponse.Meta.TotalResult,
-                FromCache: true,
-                ElapsedMs: 0,
-                Validity: logValidity,
-                InvalidReason: invalidReason
-            );
+        if (!cache.TryGetValue<GetAccommodationResponse>(cacheKey, out var cachedResponse)) 
+            return null;
+        
+        var logContext = new LogContext(
+            SearchId: searchId,
+            Request: request,
+            Page: request.Page,
+            ResultCount: cachedResponse!.Meta.ResulCount,
+            TotalResultCount: cachedResponse.Meta.TotalResult,
+            FromCache: true,
+            ElapsedMs: 0,
+            Validity: logValidity,
+            InvalidReason: invalidReason
+        );
 
-            EnqueueLog(logContext);
-            return cachedResponse;
-        }
+        EnqueueLog(logContext); // Log search using cache
+            
+        return cachedResponse;
 
-        return null;
     }
     
     private async Task<SearchResultDto<AccommodationEntity>> SearchAccommodation(GetAccommodationRequest request)

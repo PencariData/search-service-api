@@ -24,7 +24,9 @@ public class SearchLogBackgroundService(
             }
             catch (Exception ex)
             {
-                logger.LogError("Error when store search log\n   {ex}", ex.Message);
+                logger.LogError(ex,
+                    "Error storing search log. SearchId: {SearchId}, Query: {Query}, Page: {Page}",
+                    log.SearchId, log.SearchQuery, log.Page);
             }
         }
     }
