@@ -6,7 +6,8 @@ namespace SearchService.Application.Dto;
 public record GetSuggestionRequest
 (
     string Query,
-    int Limit
+    int Limit,
+    Guid? SearchId
 );
 
 public class GetSuggestionRequestValidator : AbstractValidator<GetSuggestionRequest>
@@ -20,5 +21,9 @@ public class GetSuggestionRequestValidator : AbstractValidator<GetSuggestionRequ
         RuleFor(x => x.Limit)
             .GreaterThan(0)
             .LessThanOrEqualTo(3);
+
+        RuleFor(x => x.SearchId)
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
+            .WithMessage("SearchId must be a valid GUID when provided.");
     }
 }

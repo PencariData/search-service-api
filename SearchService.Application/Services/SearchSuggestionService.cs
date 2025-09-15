@@ -1,63 +1,63 @@
 using System.Diagnostics;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
+using SearchService.Domain.Entities;
 using SearchService.Shared.Extensions;
 using SearchService.Shared.Models;
-using ValidationException = FluentValidation.ValidationException;
 
 namespace SearchService.Application.Services;
 
 public class SearchSuggestionService(
     IAccommodationRepository accommodationRepository,
+    ISuggestionSearchLogRepository suggestionSearchLogRepository,
+    ILogQueueService<SuggestionLogEntity> logQueueService,
     IDestinationRepository destinationRepository,
     IValidator<GetSuggestionRequest> validator,
     IMemoryCache cache,
-    CachingOptions cachingOptions,
-    ILogger<SearchSuggestionService> logger) : ISearchSuggestionService
+    CachingOptions cachingOptions) : ISearchSuggestionService
 {
     public async Task<GetSuggestionResponse> GetSuggestionsAsync(GetSuggestionRequest request)
     {
         // Validate request
         await validator.ValidateAndThrowAsync(request);
         
+        // Resolve searchId
+        var searchId = await ResolveSearchId(request);
+        
         // Try cache
         var cacheKey = $"suggestion:{request.Query}";
-        var cacheResponse = CacheLookup(cacheKey);
-
-        if (cacheResponse != null)
-        {
-            return cacheResponse;
-        }
+        var cacheData = CacheLookup(cacheKey, request, searchId);
+        if (cacheData != null)
+            return cacheData;
         
-        if (cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var suggestion))
-        {
-            if (suggestion != null)
-            {
-                logger.LogInformation("Total process time : {SwElapsedMilliseconds}", 0);
-                
-                // Log search event
-                return suggestion;
-            }
-        }
-        
-        // Get accommodation suggestion
+        // Get suggestion
+        var stopwatch = Stopwatch.StartNew();
         var accommodationSuggestions =
-            await accommodationRepository.GetSuggestionsAsync(request.Query, request.Limit);
-        
-        // Get destination suggestion 
+            (await accommodationRepository.GetSuggestionsAsync(request.Query, request.Limit)).ToList();
         var destinationSuggestions =
-            await destinationRepository.GetDestinationSuggestionsAsync(request.Query, request.Limit);
-        
+            (await destinationRepository.GetDestinationSuggestionsAsync(request.Query, request.Limit)).ToList();
+        var elapsedMs = stopwatch.ElapsedMilliseconds;
+
         var response = new GetSuggestionResponse(
-            accommodationSuggestions.ToList(), 
-            destinationSuggestions.ToList());
+            Meta: new SuggestionMetaDto(
+                SearchId: searchId,
+                accommodationSuggestionCount: accommodationSuggestions.Count,
+                destinationSuggestionCount: destinationSuggestions.Count),
+            AccommodationSuggestions: accommodationSuggestions, 
+            DestinationSuggestions: destinationSuggestions);
+
+        var logContext = new LogContext(
+            SearchId: searchId,
+            Request: request,
+            AccommodationSuggestionCount: accommodationSuggestions.Count,
+            DestinationSuggestionCount: destinationSuggestions.Count,
+            ElapsedMs: elapsedMs,
+            FromCache: false);
         
-        // Log search event
-        logger.LogInformation("Total process time : {SwElapsedMilliseconds}", 0);
+        EnqueueLog(logContext);
         
         // Cache the result
         cache.SetWithConfig(cacheKey, response, cachingOptions.SuggestionCacheDurationMinutes);
@@ -65,9 +65,75 @@ public class SearchSuggestionService(
         return  response;
     }
 
+    #region Private Methods
+
     private GetSuggestionResponse? CacheLookup(
-        string cacheKey)
+        string cacheKey,
+        GetSuggestionRequest request,
+        Guid searchId
+        )
     {
-        return !cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var cachedResponse) ? null : cachedResponse;
+        if (!cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var cachedResponse))
+            return null;
+
+        var logContext = new LogContext(
+            SearchId: searchId,
+            Request: request,
+            AccommodationSuggestionCount: cachedResponse!.Meta.accommodationSuggestionCount,
+            DestinationSuggestionCount: cachedResponse.Meta.destinationSuggestionCount,
+            ElapsedMs: 0,
+            FromCache: true);
+        
+        EnqueueLog(logContext);
+
+        return cachedResponse;
     }
+
+    private async Task<Guid> ResolveSearchId(GetSuggestionRequest request)
+    {
+        var searchId = request.SearchId;
+
+        if (request.SearchId != null)
+        {
+            // Assign new SearchId if the searchId have different searchQuery property
+            var existingSuggestionLog = await suggestionSearchLogRepository.GetSuggestionLogBySearchIdAsync(request.SearchId.Value);
+            if (existingSuggestionLog != null &&  existingSuggestionLog.SearchQuery != request.Query)
+            {
+                searchId = Guid.NewGuid();
+            }
+        }
+        else
+        {
+            searchId = Guid.NewGuid();
+        }
+
+        return searchId!.Value;
+    }
+    
+    private void EnqueueLog(LogContext context) =>
+        logQueueService.Enqueue(SuggestionLogEntity.Create(
+            searchId: context.SearchId,
+            timestamp: DateTime.UtcNow,
+            searchQuery: context.Request.Query,
+            accommodationSuggestionCount: context.AccommodationSuggestionCount,
+            destinationSuggestionCount: context.DestinationSuggestionCount,
+            isFromCache: context.FromCache,
+            elapsedMs: context.ElapsedMs,
+            clickedResultId: Guid.Empty,
+            clickRank: -1
+        ));
+    
+    #endregion
+    
+    #region Data Model
+    
+    private record LogContext(
+        Guid SearchId,
+        GetSuggestionRequest Request,
+        int AccommodationSuggestionCount,
+        int DestinationSuggestionCount,
+        bool FromCache,
+        long ElapsedMs
+    );
+    #endregion
 }

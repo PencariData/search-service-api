@@ -2,8 +2,8 @@ using SearchService.Domain.Entities;
 
 namespace SearchService.Application.Interfaces.Repositories;
 
-public interface ILogRepository
+public interface ISearchLogRepository
 {
-    public Task StoreSearchLogAsync(SearchLogEntity entity);
+    public Task StoreLogAsync(SearchLogEntity entity);
     public Task<SearchLogEntity?> GetSearchLogBySearchIdAsync(Guid searchId);
 }

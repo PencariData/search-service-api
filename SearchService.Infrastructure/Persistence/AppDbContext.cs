@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<SearchLogEntity> SearchLogs { get; set; }
     public DbSet<ClickLogEntity>  ClickLogs { get; set; }
+    public DbSet<SuggestionLogEntity>  SuggestionLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

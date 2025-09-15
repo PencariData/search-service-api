@@ -4,29 +4,29 @@ using SearchService.Domain.Entities;
 
 namespace SearchService.Infrastructure.Persistence.Configurations;
 
-public class SearchLogConfiguration : IEntityTypeConfiguration<SearchLogEntity>
+public class SuggestionLogConfiguration : IEntityTypeConfiguration<SuggestionLogEntity>
 {
-    public void Configure(EntityTypeBuilder<SearchLogEntity> builder)
+    public void Configure(EntityTypeBuilder<SuggestionLogEntity> builder)
     {
-        builder.ToTable("SearchSession"); // root table
-        builder.HasKey(x => x.SearchId);
+        builder.ToTable("SuggestionSession");
+        builder.HasKey(x => x.SuggestionId);
 
-        // SessionInfo → flatten into SearchSession table
+        builder.Property(x => x.SearchId).IsRequired();
+
+        // SessionInfo → flatten into SuggestionSession table
         builder.OwnsOne(x => x.Session, session =>
         {
             session.Property(s => s.Timestamp).HasColumnName("Timestamp").IsRequired();
             session.Property(s => s.Query).HasColumnName("QueryText").IsRequired();
-            session.Property(s => s.Type).HasColumnName("SearchType").IsRequired();
-            session.Property(s => s.Page).HasColumnName("Page").IsRequired();
-            session.Property(s => s.ResultCount).HasColumnName("ResultCount").IsRequired();
-            session.Property(s => s.TotalResultCount).HasColumnName("TotalResultCount").IsRequired();
+            session.Property(s => s.AccommodationSuggestionCount).HasColumnName("AccommodationSuggestionCount");
+            session.Property(s => s.DestinationSuggestionCount).HasColumnName("DestinationSuggestionCount");
         });
 
         // PerformanceInfo → separate table
         builder.OwnsOne(x => x.Performance, perf =>
         {
-            perf.ToTable("SearchPerformance");
-            perf.WithOwner().HasForeignKey("SearchId");
+            perf.ToTable("SuggestionPerformance");
+            perf.WithOwner().HasForeignKey("SuggestionId");
             perf.Property(p => p.IsFromCache).HasColumnName("IsFromCache").IsRequired();
             perf.Property(p => p.ElapsedMs).HasColumnName("ElapsedMs").IsRequired();
         });
@@ -34,11 +34,10 @@ public class SearchLogConfiguration : IEntityTypeConfiguration<SearchLogEntity>
         // InteractionInfo → separate table
         builder.OwnsOne(x => x.Interaction, interaction =>
         {
-            interaction.ToTable("SearchInteraction");
-            interaction.WithOwner().HasForeignKey("SearchId");
+            interaction.ToTable("SuggestionInteraction");
+            interaction.WithOwner().HasForeignKey("SuggestionId");
             interaction.Property(i => i.ClickedResultId).HasColumnName("ClickedResultId");
             interaction.Property(i => i.ClickRank).HasColumnName("ClickRank");
-            interaction.Property(i => i.DwellTimeMs).HasColumnName("DwellTimeMs");
         });
     }
 }

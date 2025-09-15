@@ -240,7 +240,7 @@ public class ElasticSeeder(
         {
             new Destination
             {
-                Id = "d1",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Jakarta",
                 NameSuggest = new NameSuggest { Input = ["Jakarta"] },
                 FullName = "Jakarta, DKI Jakarta, Indonesia",
@@ -249,7 +249,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d2",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Bandung",
                 NameSuggest = new NameSuggest { Input = ["Bandung"] },
                 FullName = "Bandung, West Java, Indonesia",
@@ -258,7 +258,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d3",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Surabaya",
                 NameSuggest = new NameSuggest { Input = ["Surabaya"] },
                 FullName = "Surabaya, East Java, Indonesia",
@@ -267,7 +267,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d4",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Yogyakarta",
                 NameSuggest = new NameSuggest { Input = ["Yogyakarta"] },
                 FullName = "Yogyakarta, Special Region of Yogyakarta, Indonesia",
@@ -276,7 +276,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d5",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Malang",
                 NameSuggest = new NameSuggest { Input = ["Malang"] },
                 FullName = "Malang, East Java, Indonesia",
@@ -285,7 +285,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d6",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Semarang",
                 NameSuggest = new NameSuggest { Input = ["Semarang"] },
                 FullName = "Semarang, Central Java, Indonesia",
@@ -294,7 +294,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d7",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Bogor",
                 NameSuggest = new NameSuggest { Input = ["Bogor"] },
                 FullName = "Bogor, West Java, Indonesia",
@@ -303,7 +303,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d8",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Depok",
                 NameSuggest = new NameSuggest { Input = ["Depok"] },
                 FullName = "Depok, West Java, Indonesia",
@@ -312,7 +312,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d9",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Tangerang",
                 NameSuggest = new NameSuggest { Input = ["Tangerang"] },
                 FullName = "Tangerang, Banten, Indonesia",
@@ -321,7 +321,7 @@ public class ElasticSeeder(
             },
             new Destination
             {
-                Id = "d10",
+                Id = Guid.NewGuid().ToString(),
                 Name = "Solo",
                 NameSuggest = new NameSuggest { Input = ["Solo"] },
                 FullName = "Solo, Central Java, Indonesia",

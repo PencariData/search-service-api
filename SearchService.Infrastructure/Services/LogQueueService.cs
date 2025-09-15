@@ -5,16 +5,15 @@ using SearchService.Domain.Entities;
 
 namespace SearchService.Infrastructure.Services;
 
-public class LogQueueService(
-    Channel<SearchLogEntity> channel,
-    ILogger<LogQueueService> logger) : ILogQueueService
+public class LogQueueService<T>(
+    Channel<T> channel,
+    ILogger<LogQueueService<T>> logger) : ILogQueueService<T>
 {
-    public void Enqueue(SearchLogEntity log)
+    public void Enqueue(T log)
     {
         if (!channel.Writer.TryWrite(log))
         {
-            logger.LogError("Failed to enqueue log for SearchId {SearchId}, Query: {Query}",
-                log.SearchId, log.SearchQuery);
+            logger.LogError("Failed to enqueue log: {@Log}", log);
         }
     }
 }

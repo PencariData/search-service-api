@@ -14,8 +14,8 @@ namespace SearchService.Application.Services;
 
 public class AccommodationService(
     IAccommodationRepository accommodationRepository,
-    ILogRepository logRepository,
-    ILogQueueService logQueueService,
+    ISearchLogRepository searchLogRepository,
+    ILogQueueService<SearchLogEntity> logQueueService,
     IValidator<GetAccommodationRequest> validator,
     IMemoryCache cache,
     CachingOptions cachingOptions)
@@ -96,7 +96,7 @@ public class AccommodationService(
         if (request.SearchId != null)
         {
             // Assign new SearchId if the searchId have different searchQuery property
-            var existingSearchLog = await logRepository.GetSearchLogBySearchIdAsync(request.SearchId.Value);
+            var existingSearchLog = await searchLogRepository.GetSearchLogBySearchIdAsync(request.SearchId.Value);
             if (existingSearchLog != null &&  existingSearchLog.SearchQuery != request.SearchQuery)
             {
                 searchId = Guid.NewGuid();

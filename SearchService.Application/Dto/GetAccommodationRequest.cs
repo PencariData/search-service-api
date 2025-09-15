@@ -15,6 +15,10 @@ public class GetAccommodationRequestValidator : AbstractValidator<GetAccommodati
 {
     public GetAccommodationRequestValidator()
     {
+        RuleFor(x => x.SearchId)
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
+            .WithMessage("SearchId must be a valid GUID when provided.");
+        
         RuleFor(x => x.SearchQuery)
             .NotNull()
             .NotEmpty();

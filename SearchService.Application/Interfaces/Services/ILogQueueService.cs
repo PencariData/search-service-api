@@ -2,7 +2,7 @@ using SearchService.Domain.Entities;
 
 namespace SearchService.Application.Interfaces.Services;
 
-public interface ILogQueueService
+public interface ILogQueueService<in T>
 {
-    public void Enqueue(SearchLogEntity log);
+    public void Enqueue(T log);
 }
