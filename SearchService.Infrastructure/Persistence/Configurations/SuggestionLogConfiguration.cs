@@ -10,9 +10,7 @@ public class SuggestionLogConfiguration : IEntityTypeConfiguration<SuggestionLog
     {
         builder.ToTable("SuggestionSession");
         builder.HasKey(x => x.SuggestionId);
-
-        builder.Property(x => x.SearchId).IsRequired();
-
+        
         // SessionInfo → flatten into SuggestionSession table
         builder.OwnsOne(x => x.Session, session =>
         {

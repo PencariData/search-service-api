@@ -13,9 +13,9 @@ public class SuggestionSearchSearchLogRepository(AppDbContext dbContext) : ISugg
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<SuggestionLogEntity?> GetSuggestionLogBySearchIdAsync(Guid searchId)
+    public async Task<SuggestionLogEntity?> GetSuggestionLogBySearchIdAsync(Guid suggestionId)
     {
         return await dbContext.SuggestionLogs
-            .FirstOrDefaultAsync(x => x.SearchId == searchId);
+            .FirstOrDefaultAsync(x => x.SuggestionId == suggestionId);
     }
 }

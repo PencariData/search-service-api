@@ -5,6 +5,7 @@ using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
 using SearchService.Domain.Entities;
+using SearchService.Domain.ValueObjects;
 using SearchService.Shared.Extensions;
 using SearchService.Shared.Models;
 
@@ -97,7 +98,7 @@ public class SearchSuggestionService(
         {
             // Assign new SearchId if the searchId have different searchQuery property
             var existingSuggestionLog = await suggestionSearchLogRepository.GetSuggestionLogBySearchIdAsync(request.SearchId.Value);
-            if (existingSuggestionLog != null &&  existingSuggestionLog.SearchQuery != request.Query)
+            if (existingSuggestionLog != null &&  existingSuggestionLog.Session.Query != request.Query)
             {
                 searchId = Guid.NewGuid();
             }
@@ -112,15 +113,10 @@ public class SearchSuggestionService(
     
     private void EnqueueLog(LogContext context) =>
         logQueueService.Enqueue(SuggestionLogEntity.Create(
-            searchId: context.SearchId,
-            timestamp: DateTime.UtcNow,
-            searchQuery: context.Request.Query,
-            accommodationSuggestionCount: context.AccommodationSuggestionCount,
-            destinationSuggestionCount: context.DestinationSuggestionCount,
-            isFromCache: context.FromCache,
-            elapsedMs: context.ElapsedMs,
-            clickedResultId: Guid.Empty,
-            clickRank: -1
+            suggestionId: context.SearchId,
+            session: new SuggestionSessionInfo(DateTime.UtcNow, context.Request.Query, context.AccommodationSuggestionCount, context.DestinationSuggestionCount),
+            performance: new SuggestionPerformanceInfo(context.FromCache, context.ElapsedMs),
+            interaction: null
         ));
     
     #endregion

@@ -7,6 +7,7 @@ using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
 using SearchService.Domain.Entities;
 using SearchService.Domain.Enums;
+using SearchService.Domain.ValueObjects;
 using SearchService.Shared.Extensions;
 using SearchService.Shared.Models;
 
@@ -97,7 +98,7 @@ public class AccommodationService(
         {
             // Assign new SearchId if the searchId have different searchQuery property
             var existingSearchLog = await searchLogRepository.GetSearchLogBySearchIdAsync(request.SearchId.Value);
-            if (existingSearchLog != null &&  existingSearchLog.SearchQuery != request.SearchQuery)
+            if (existingSearchLog != null &&  existingSearchLog.Session.Query != request.SearchQuery)
             {
                 searchId = Guid.NewGuid();
             }
@@ -171,20 +172,10 @@ public class AccommodationService(
 
     private void EnqueueLog(LogContext context) =>
         logQueueService.Enqueue(SearchLogEntity.Create(
-            context.SearchId,
-            DateTime.UtcNow,
-            context.Request.SearchQuery,
-            context.Request.AccommodationSearchType.ToString(),
-            context.Page,
-            context.ResultCount,
-            context.TotalResultCount,
-            context.FromCache,
-            context.ElapsedMs,
-            null,
-            null,
-            null,
-            context.Validity,
-            context.InvalidReason
+            searchId:  context.SearchId,
+            session: new SearchSessionInfo(DateTime.UtcNow, context.Request.SearchQuery, context.Request.AccommodationSearchType.ToString(), context.Request.Page, context.ResultCount, context.TotalResultCount),
+            performance: new SearchPerformanceInfo(context.FromCache, context.ElapsedMs),
+            interaction: null
         ));
     
     #endregion
