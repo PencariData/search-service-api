@@ -5,7 +5,7 @@ using SearchService.Infrastructure.Persistence;
 
 namespace SearchService.Infrastructure.Repositories;
 
-public class SearchSearchLogRepository(AppDbContext dbContext) : ISearchLogRepository
+public class SearchLogRepository(AppDbContext dbContext) : ISearchLogRepository
 {
     public async Task StoreLogAsync(SearchLogEntity entity)
     {
@@ -13,11 +13,8 @@ public class SearchSearchLogRepository(AppDbContext dbContext) : ISearchLogRepos
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<SearchLogEntity?> GetSearchLogBySearchIdAsync(Guid searchId)
-    {
-        return await dbContext.SearchLogs
+    public async Task<SearchLogEntity?> GetSearchLogBySearchIdAsync(Guid searchId) =>
+        await dbContext.SearchLogs
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SearchId == searchId);
-    }
-    
-    
 }

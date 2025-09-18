@@ -8,37 +8,38 @@ public class SearchLogConfiguration : IEntityTypeConfiguration<SearchLogEntity>
 {
     public void Configure(EntityTypeBuilder<SearchLogEntity> builder)
     {
-        builder.ToTable("SearchSession"); // root table
-        builder.HasKey(x => x.SearchId);
+        builder.ToTable("SearchLogs");
 
-        // SessionInfo → flatten into SearchSession table
-        builder.OwnsOne(x => x.Session, session =>
-        {
-            session.Property(s => s.Timestamp).HasColumnName("Timestamp").IsRequired();
-            session.Property(s => s.Query).HasColumnName("QueryText").IsRequired();
-            session.Property(s => s.Type).HasColumnName("SearchType").IsRequired();
-            session.Property(s => s.Page).HasColumnName("Page").IsRequired();
-            session.Property(s => s.ResultCount).HasColumnName("ResultCount").IsRequired();
-            session.Property(s => s.TotalResultCount).HasColumnName("TotalResultCount").IsRequired();
-        });
+        builder.HasKey(x => x.LogId);
 
-        // PerformanceInfo → separate table
-        builder.OwnsOne(x => x.Performance, perf =>
-        {
-            perf.ToTable("SearchPerformance");
-            perf.WithOwner().HasForeignKey("SearchId");
-            perf.Property(p => p.IsFromCache).HasColumnName("IsFromCache").IsRequired();
-            perf.Property(p => p.ElapsedMs).HasColumnName("ElapsedMs").IsRequired();
-        });
+        builder.Property(x => x.SessionId)
+            .IsRequired();
 
-        // InteractionInfo → separate table
-        builder.OwnsOne(x => x.Interaction, interaction =>
-        {
-            interaction.ToTable("SearchInteraction");
-            interaction.WithOwner().HasForeignKey("SearchId");
-            interaction.Property(i => i.ClickedResultId).HasColumnName("ClickedResultId");
-            interaction.Property(i => i.ClickRank).HasColumnName("ClickRank");
-            interaction.Property(i => i.DwellTimeMs).HasColumnName("DwellTimeMs");
-        });
+        builder.Property(x => x.SearchId)
+            .IsRequired();
+
+        builder.Property(x => x.Timestamp)
+            .IsRequired();
+
+        builder.Property(x => x.Query)
+            .IsRequired()
+            .HasMaxLength(1000);
+
+        builder.Property(x => x.Page).IsRequired();
+        builder.Property(x => x.ResultCount).IsRequired();
+        builder.Property(x => x.ElapsedMs).IsRequired();
+
+        builder.Property(x => x.UserAgent).HasMaxLength(500);
+        builder.Property(x => x.IpAddress).HasMaxLength(45); // IPv6 ready
+        builder.Property(x => x.Referer).HasMaxLength(2000);
+
+        // Indexes for analytics
+        builder.HasIndex(x => x.Timestamp).HasDatabaseName("IX_SearchLogs_Timestamp");
+        builder.HasIndex(x => x.Query).HasDatabaseName("IX_SearchLogs_Query");
+        builder.HasIndex(x => x.IpAddress).HasDatabaseName("IX_SearchLogs_IpAddress");
+
+        // Composite index for session + search tracking
+        builder.HasIndex(x => new { x.SessionId, x.SearchId })
+            .HasDatabaseName("IX_SearchLogs_Session_Search");
     }
 }

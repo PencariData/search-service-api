@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SearchService.API.Middlewares;
 using SearchService.API.Responses;
 using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Services;
@@ -16,7 +17,9 @@ public class AccommodationController(
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Accommodations([FromQuery] GetAccommodationRequest request)
     {
-        var result = await accommodationService.SearchAccommodationsAsync(request);
+        var requestInfo = HttpContext.Items["RequestInfo"] as RequestInfoDto;
+        
+        var result = await accommodationService.SearchAccommodationsAsync(request, requestInfo);
     
         return Ok(ApiResponse<GetAccommodationResponse>.Ok(result));
     }

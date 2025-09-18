@@ -54,6 +54,7 @@ if (args.Contains("--seed"))
 app.UseCors("AllowNuxtApp");
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<RequestInfoMiddleware>();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

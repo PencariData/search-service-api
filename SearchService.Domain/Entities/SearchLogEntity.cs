@@ -1,41 +1,50 @@
-using SearchService.Domain.Enums;
-using SearchService.Domain.ValueObjects;
-
 namespace SearchService.Domain.Entities;
 
 public class SearchLogEntity
 {
-    public Guid SearchId { get; private set; }
-    public SearchSessionInfo Session { get; private set; }
-    public SearchPerformanceInfo Performance { get; private set; }
-    public SearchInteractionInfo? Interaction { get; private set; }
+    public Guid LogId { get; private set; }        // Primary key
+    public Guid SessionId { get; private set; }    // Groups by session
+    public Guid SearchId { get; private set; }     // Identifies one logical search
+    public DateTime Timestamp { get; private set; }
+    public string Query { get; private set; }
+    public int Page { get; private set; }
+    public int ResultCount { get; private set; }
+    public long ElapsedMs { get; private set; }
+    public string? UserAgent { get; private set; }
+    public string? IpAddress { get; private set; }
+    public string? Referer { get; private set; }
 
     private SearchLogEntity() { } // EF
 
-    private SearchLogEntity(
-        Guid searchId,
-        SearchSessionInfo session,
-        SearchPerformanceInfo performance,
-        SearchInteractionInfo? interaction = null)
+    private SearchLogEntity(Guid sessionId, Guid searchId, DateTime timestamp,
+        string query, int page, int resultCount, long elapsedMs,
+        string? userAgent, string? ipAddress, string? referer)
     {
-        SearchId = searchId == Guid.Empty 
-            ? throw new ArgumentNullException(nameof(searchId)) 
-            : searchId;
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ArgumentException("Query cannot be empty", nameof(query));
 
-        Session = session ?? throw new ArgumentNullException(nameof(session));
-        Performance = performance ?? throw new ArgumentNullException(nameof(performance));
-        Interaction = interaction;
+        LogId = Guid.NewGuid();
+        SessionId = sessionId;
+        SearchId = searchId;
+        Timestamp = timestamp;
+        Query = query.Trim();
+        Page = page >= 1 ? page : 1;
+        ResultCount = resultCount;
+        ElapsedMs = elapsedMs;
+        UserAgent = userAgent;
+        IpAddress = ipAddress;
+        Referer = referer;
     }
 
     public static SearchLogEntity Create(
+        Guid sessionId,
         Guid searchId,
-        SearchSessionInfo session,
-        SearchPerformanceInfo performance,
-        SearchInteractionInfo? interaction = null)
-        => new(searchId, session, performance, interaction);
-
-    public void AddInteraction(SearchInteractionInfo interaction)
-    {
-        Interaction = interaction;
-    }
+        string query,
+        int page,
+        int resultCount,
+        long elapsedMs,
+        string? userAgent,
+        string? ipAddress,
+        string? referer) =>
+        new(sessionId, searchId, DateTime.UtcNow, query, page, resultCount, elapsedMs, userAgent, ipAddress, referer);
 }

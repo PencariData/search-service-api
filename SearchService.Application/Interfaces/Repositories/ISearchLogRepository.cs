@@ -4,6 +4,6 @@ namespace SearchService.Application.Interfaces.Repositories;
 
 public interface ISearchLogRepository
 {
-    public Task StoreLogAsync(SearchLogEntity entity);
-    public Task<SearchLogEntity?> GetSearchLogBySearchIdAsync(Guid searchId);
+    Task StoreLogAsync(SearchLogEntity entity);
+    Task<SearchLogEntity?> GetSearchLogBySearchIdAsync(Guid searchId);
 }

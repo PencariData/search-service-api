@@ -8,7 +8,8 @@ public record GetAccommodationRequest(
     AccommodationSearchType AccommodationSearchType,
     int Limit,
     int Page,
-    Guid? SearchId
+    Guid? SearchId,
+    Guid? SessionId
 );
 
 public class GetAccommodationRequestValidator : AbstractValidator<GetAccommodationRequest>
