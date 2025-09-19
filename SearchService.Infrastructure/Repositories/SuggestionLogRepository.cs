@@ -5,17 +5,11 @@ using SearchService.Infrastructure.Persistence;
 
 namespace SearchService.Infrastructure.Repositories;
 
-public class SuggestionSearchSearchLogRepository(AppDbContext dbContext) : ISuggestionSearchLogRepository
+public class SuggestionLogRepository(AppDbContext dbContext) : ISuggestionLogRepository
 {
     public async Task StoreLogAsync(SuggestionLogEntity entity)
     {
         await dbContext.SuggestionLogs.AddAsync(entity);
         await dbContext.SaveChangesAsync();
-    }
-
-    public async Task<SuggestionLogEntity?> GetSuggestionLogBySearchIdAsync(Guid suggestionId)
-    {
-        return await dbContext.SuggestionLogs
-            .FirstOrDefaultAsync(x => x.SuggestionId == suggestionId);
     }
 }

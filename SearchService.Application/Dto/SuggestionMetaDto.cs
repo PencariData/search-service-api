@@ -2,7 +2,7 @@ namespace SearchService.Application.Dto;
 
 public record SuggestionMetaDto
 (
-    Guid SearchId,
+    Guid SessionId,
     int accommodationSuggestionCount,
     int destinationSuggestionCount
 );

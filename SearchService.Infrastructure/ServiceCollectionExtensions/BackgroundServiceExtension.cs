@@ -16,7 +16,7 @@ public static class BackgroundServiceExtension
         services.AddSingleton(Channel.CreateUnbounded<SuggestionLogEntity>());
         
         services.AddHostedService<BackgroundLogService<SearchLogEntity, ISearchLogRepository>>();
-        services.AddHostedService<BackgroundLogService<SuggestionLogEntity, ISuggestionSearchLogRepository>>();
+        services.AddHostedService<BackgroundLogService<SuggestionLogEntity, ISuggestionLogRepository>>();
         
         services.AddSingleton(typeof(ILogQueueService<>), typeof(LogQueueService<>));
     }

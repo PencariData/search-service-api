@@ -1,40 +1,28 @@
-using SearchService.Domain.ValueObjects;
-
 namespace SearchService.Domain.Entities;
 
 public class SuggestionLogEntity
 {
-    public Guid SuggestionId { get; private set; }
-    public SuggestionSessionInfo Session { get; private set; }
-    public SuggestionPerformanceInfo Performance { get; private set; }
-    public SuggestionInteractionInfo? Interaction { get; private set; }
+    public Guid LogId { get; private set; }             // Primary Key
+    public Guid SessionId { get; private set; }         // Groups by session
+    public string Query { get; private set; }
+    public int AccommodationSuggestionCount { get; private set; }
+    public int DestinationSuggestionCount { get; private set; }
+    public long ElapsedMs { get; private set; }
+    public DateTime Timestamp { get; private set; }
 
     private SuggestionLogEntity() { } // EF
 
-    private SuggestionLogEntity(
-        Guid suggestionId,
-        SuggestionSessionInfo session,
-        SuggestionPerformanceInfo performance,
-        SuggestionInteractionInfo? interaction = null)
+    private SuggestionLogEntity(Guid sessionId, string query, int accommodationSuggestionCount, int destinationSuggestionCount, long elapsedMs)
     {
-        SuggestionId = suggestionId == Guid.Empty 
-            ? throw new ArgumentNullException(nameof(suggestionId)) 
-            : suggestionId;
-
-        Session = session ?? throw new ArgumentNullException(nameof(session));
-        Performance = performance ?? throw new ArgumentNullException(nameof(performance));
-        Interaction = interaction;
+        LogId = Guid.NewGuid();
+        SessionId = sessionId;
+        Query = query ?? throw new ArgumentNullException(nameof(query));
+        AccommodationSuggestionCount = accommodationSuggestionCount;
+        DestinationSuggestionCount = destinationSuggestionCount;
+        ElapsedMs = elapsedMs;
+        Timestamp = DateTime.UtcNow;
     }
 
-    public static SuggestionLogEntity Create(
-        Guid suggestionId,
-        SuggestionSessionInfo session,
-        SuggestionPerformanceInfo performance,
-        SuggestionInteractionInfo? interaction = null)
-        => new(suggestionId, session, performance, interaction);
-
-    public void AddInteraction(SuggestionInteractionInfo interaction)
-    {
-        Interaction = interaction;
-    }
+    public static SuggestionLogEntity Create(Guid sessionId, string query, int accommodationSuggestionCount, int destinationSuggestionCount, long elapsedMs)
+        => new(sessionId, query, accommodationSuggestionCount, destinationSuggestionCount, elapsedMs);
 }

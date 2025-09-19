@@ -7,7 +7,7 @@ public record GetSuggestionRequest
 (
     string Query,
     int Limit,
-    Guid? SearchId
+    Guid? SessionId
 );
 
 public class GetSuggestionRequestValidator : AbstractValidator<GetSuggestionRequest>
@@ -22,8 +22,8 @@ public class GetSuggestionRequestValidator : AbstractValidator<GetSuggestionRequ
             .GreaterThan(0)
             .LessThanOrEqualTo(3);
 
-        RuleFor(x => x.SearchId)
+        RuleFor(x => x.SessionId)
             .Must(id => !id.HasValue || id.Value != Guid.Empty)
-            .WithMessage("SearchId must be a valid GUID when provided.");
+            .WithMessage("SessionId must be a valid GUID when provided.");
     }
 }

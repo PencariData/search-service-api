@@ -23,6 +23,6 @@ public static class DependencyInjection
         services.AddScoped<IAccommodationRepository, AccommodationRepository>();
         services.AddScoped<IDestinationRepository, DestinationRepository>();
         services.AddScoped<ISearchLogRepository, SearchLogRepository>();
-        services.AddScoped<ISuggestionSearchLogRepository, SuggestionSearchSearchLogRepository>();
+        services.AddScoped<ISuggestionLogRepository, SuggestionLogRepository>();
     }
 }
