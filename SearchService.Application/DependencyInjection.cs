@@ -11,6 +11,7 @@ public static class DependencyInjection
     public static void AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAccommodationService, AccommodationService>();
+        services.AddScoped<IAccommodationInteractionService, AccommodationInteractionService>();
         services.AddScoped<ISearchSuggestionService, SearchSuggestionService>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
     }

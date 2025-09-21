@@ -1,8 +1,7 @@
 namespace SearchService.Application.Dto;
 
-public class PostAccommodationClickRequest
-{
-    public Guid SearchId { get; set; }
-    public int AccommodationRank { get; set; }
-    public int Page { get; set; }
-}
+public record PostAccommodationClickRequest(
+    Guid SessionId,
+    Guid SearchId,
+    int ItemIndex
+);

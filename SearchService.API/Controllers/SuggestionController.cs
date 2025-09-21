@@ -21,4 +21,11 @@ public class SuggestionController
         
         return Ok(ApiResponse<GetSuggestionResponse>.Ok(result));
     }
+    
+    [HttpPost("click")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public IActionResult AccommodationClick([FromBody] PostAccommodationClickRequest request)
+    {
+        throw new NotImplementedException();
+    }
 }

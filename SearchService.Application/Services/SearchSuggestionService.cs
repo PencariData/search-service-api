@@ -5,8 +5,7 @@ using Microsoft.Extensions.Logging;
 using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
-using SearchService.Domain.Entities;
-using SearchService.Domain.ValueObjects;
+using SearchService.Domain.Events;
 using SearchService.Shared.Extensions;
 using SearchService.Shared.Models;
 
@@ -14,71 +13,63 @@ namespace SearchService.Application.Services;
 
 public class SearchSuggestionService(
     IAccommodationRepository accommodationRepository,
-    ISuggestionLogRepository suggestionLogRepository,
-    ILogger<SearchSuggestionService> logger,
-    ILogQueueService<SuggestionLogEntity> logQueueService,
     IDestinationRepository destinationRepository,
     IValidator<GetSuggestionRequest> validator,
     IMemoryCache cache,
-    CachingOptions cachingOptions) : ISearchSuggestionService
+    CachingOptions cachingOptions,
+    ILogQueueService<SearchEvent> logQueueService,
+    ILogger<SearchSuggestionService> logger) : ISearchSuggestionService
 {
     public async Task<GetSuggestionResponse> GetSuggestionsAsync(GetSuggestionRequest request)
     {
         // Validate request
         await validator.ValidateAndThrowAsync(request);
-        
+
         var sessionId = request.SessionId ?? Guid.Empty;
-        if(sessionId == Guid.Empty)
+        if (sessionId == Guid.Empty)
             logger.LogWarning("{TimeStamp} - Request with empty sessionId", DateTime.UtcNow);
-        
-        // Try cache
-        var cacheKey = $"suggestion:{request.Query}";
+
+        // Cache key (include limit for correctness)
+        var cacheKey = $"suggestion:{request.Query}:{request.Limit}";
         var cacheData = CacheLookup(cacheKey);
         if (cacheData != null)
         {
-            var suggestionLogFromCache = SuggestionLogEntity.Create(
-                sessionId: sessionId, 
-                query: request.Query, 
-                accommodationSuggestionCount: cacheData.AccommodationSuggestions.Count, 
-                destinationSuggestionCount: cacheData.DestinationSuggestions.Count,
-                elapsedMs: 0);
-            
-            EnqueueLog(suggestionLogFromCache);
-            
+            // Log cache hit
+            EnqueueLog(new SuggestionsShown(
+                sessionId: sessionId,
+                suggestions: cacheData.AccommodationSuggestions
+                    .Concat(cacheData.DestinationSuggestions)
+            ));
+
             return cacheData;
         }
-        
-        // Get suggestion
+
+        // Fetch suggestions
         var stopwatch = Stopwatch.StartNew();
         var accommodationSuggestions = (await accommodationRepository.GetSuggestionsAsync(request.Query, request.Limit)).ToList();
         var destinationSuggestions = (await destinationRepository.GetDestinationSuggestionsAsync(request.Query, request.Limit)).ToList();
-        var elapsedMs = stopwatch.ElapsedMilliseconds;
-        
-        // Map results
+        stopwatch.Stop();
+
         var response = new GetSuggestionResponse(
             Meta: new SuggestionMetaDto(
                 SessionId: sessionId,
                 accommodationSuggestionCount: accommodationSuggestions.Count,
                 destinationSuggestionCount: destinationSuggestions.Count
             ),
-            AccommodationSuggestions: accommodationSuggestions, 
+            AccommodationSuggestions: accommodationSuggestions,
             DestinationSuggestions: destinationSuggestions
         );
-        
-        // Store Log
-        var searchLogFromSearch = SuggestionLogEntity.Create(
+
+        // Log fresh suggestions
+        EnqueueLog(new SuggestionsShown(
             sessionId: sessionId,
-            query: request.Query,
-            accommodationSuggestionCount: accommodationSuggestions.Count,
-            destinationSuggestionCount: destinationSuggestions.Count,
-            elapsedMs: elapsedMs);
-        
-        EnqueueLog(searchLogFromSearch);
-        
-        // Cache
+            suggestions: accommodationSuggestions.Concat(destinationSuggestions)
+        ));
+
+        // Cache result
         cache.SetWithConfig(cacheKey, response, cachingOptions.SuggestionCacheDurationMinutes);
-        
-        return  response;
+
+        return response;
     }
 
     #region Private Methods
@@ -87,9 +78,9 @@ public class SearchSuggestionService(
     {
         return !cache.TryGetValue<GetSuggestionResponse>(cacheKey, out var cachedResponse) ? null : cachedResponse;
     }
-    
-    private void EnqueueLog(SuggestionLogEntity log) =>
-        logQueueService.Enqueue(log);
-    
+
+    private void EnqueueLog(SearchEvent evt) =>
+        logQueueService.Enqueue(evt);
+
     #endregion
 }

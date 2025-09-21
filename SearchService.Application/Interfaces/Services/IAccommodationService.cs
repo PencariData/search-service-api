@@ -4,5 +4,5 @@ namespace SearchService.Application.Interfaces.Services;
 
 public interface IAccommodationService
 {
-    public Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request, RequestInfoDto? requestInfo);
+    public Task<GetAccommodationResponse> SearchAccommodationsAsync(GetAccommodationRequest request);
 }

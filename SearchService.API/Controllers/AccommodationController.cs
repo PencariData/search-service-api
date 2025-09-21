@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using SearchService.API.Middlewares;
 using SearchService.API.Responses;
 using SearchService.Application.Dto;
 using SearchService.Application.Interfaces.Services;
@@ -9,7 +8,8 @@ namespace SearchService.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AccommodationController(
-    IAccommodationService accommodationService) : ControllerBase
+    IAccommodationService accommodationService,
+    IAccommodationInteractionService accommodationInteractionService) : ControllerBase
 {
     [HttpGet("search")]
     [ProducesResponseType(typeof(ApiResponse<List<GetAccommodationResponse>>), StatusCodes.Status200OK)]
@@ -17,16 +17,19 @@ public class AccommodationController(
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Accommodations([FromQuery] GetAccommodationRequest request)
     {
-        var requestInfo = HttpContext.Items["RequestInfo"] as RequestInfoDto;
-        
-        var result = await accommodationService.SearchAccommodationsAsync(request, requestInfo);
+        var result = await accommodationService.SearchAccommodationsAsync(request);
     
         return Ok(ApiResponse<GetAccommodationResponse>.Ok(result));
     }
 
     [HttpPost("click")]
-    public Task<IActionResult> AccommodationClick([FromBody] PostAccommodationClickRequest request)
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public IActionResult AccommodationClick([FromBody] PostAccommodationClickRequest request)
     {
-        throw new NotImplementedException();
+        // fire-and-forget: enqueue the click event
+        _ = accommodationInteractionService.RegisterClickAsync(request); 
+
+        // return immediately
+        return Accepted();
     }
 }

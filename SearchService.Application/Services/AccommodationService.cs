@@ -7,6 +7,7 @@ using SearchService.Application.Enums;
 using SearchService.Application.Interfaces.Repositories;
 using SearchService.Application.Interfaces.Services;
 using SearchService.Domain.Entities;
+using SearchService.Domain.Events;
 using SearchService.Shared.Extensions;
 using SearchService.Shared.Models;
 
@@ -14,8 +15,7 @@ namespace SearchService.Application.Services;
 
 public class AccommodationService(
     IAccommodationRepository accommodationRepository,
-    ISearchLogRepository searchLogRepository,
-    ILogQueueService<SearchLogEntity> logQueueService,
+    ILogQueueService<SearchEvent> logQueueService,
     IValidator<GetAccommodationRequest> validator,
     IMemoryCache cache,
     CachingOptions cachingOptions,
@@ -23,14 +23,10 @@ public class AccommodationService(
     : IAccommodationService
 {
     public async Task<GetAccommodationResponse> SearchAccommodationsAsync(
-        GetAccommodationRequest request,
-        RequestInfoDto? requestInfo)
+        GetAccommodationRequest request)
     {
         // Validate request
         await validator.ValidateAndThrowAsync(request);
-
-        // Resolve searchId
-        var searchId = await ResolveSearchId(request);
         
         // Resolve sessionId
         var sessionId = request.SessionId ?? Guid.Empty;
@@ -43,23 +39,21 @@ public class AccommodationService(
         if (cacheData != null)
         {
             // Store Log
-            var searchLogFromCache = SearchLogEntity.Create(
-                sessionId: request.SessionId ?? Guid.Empty, 
-                searchId: searchId,
+            var searchPerformedFromCache = new SearchPerformed(
+                sessionId: request.SessionId ?? Guid.Empty,
+                searchId: request.SearchId ?? Guid.Empty,
                 query: request.SearchQuery,
                 page: request.Page,
                 resultCount: cacheData.Accommodations.Count,
-                elapsedMs: 0,
-                userAgent: requestInfo?.UserAgent,
-                ipAddress: requestInfo?.Ip,
-                referer: requestInfo?.Referer);
+                elapsedMs: 0
+            );
             
-            EnqueueLog(searchLogFromCache);
+            EnqueueLog(searchPerformedFromCache);
             
             return  new GetAccommodationResponse(
                 Meta: new SearchMetaDto(
                     SessionId: sessionId,
-                    SearchId: searchId,
+                    SearchId: request.SearchId ?? Guid.Empty,
                     Page: request.Page,
                     ResulCount: cacheData.Accommodations.Count,
                     TotalResult: cacheData.TotalResult
@@ -79,7 +73,7 @@ public class AccommodationService(
         var response = new GetAccommodationResponse(
             Meta: new SearchMetaDto(
                 SessionId: sessionId,
-                SearchId: searchId,
+                SearchId: request.SearchId ?? Guid.Empty,
                 Page: request.Page,
                 ResulCount: dtoList.Count,
                 TotalResult: searchResult.Total
@@ -88,17 +82,16 @@ public class AccommodationService(
         );
         
         // Store Log
-        var searchLogFromSearch = SearchLogEntity.Create(
+        var searchPerformed = new SearchPerformed(
             sessionId: request.SessionId ?? Guid.Empty, 
-            searchId: searchId,
+            searchId: request.SearchId ?? Guid.Empty,
             query: request.SearchQuery,
             page: request.Page,
             resultCount: dtoList.Count,
-            elapsedMs: elapsedMs,
-            userAgent: requestInfo?.UserAgent,
-            ipAddress: requestInfo?.Ip,
-            referer: requestInfo?.Referer);
-        EnqueueLog(searchLogFromSearch);
+            elapsedMs: elapsedMs
+        );
+
+        EnqueueLog(searchPerformed);
 
         // Cache
         var cachePayload = new CachedSearchResult(dtoList, searchResult.Total);
@@ -108,27 +101,6 @@ public class AccommodationService(
     }
     
     #region Private Methods
-    
-    private async Task<Guid> ResolveSearchId(GetAccommodationRequest request)
-    {
-        var searchId = request.SearchId;
-
-        if (request.SearchId != null)
-        {
-            // Assign new SearchId if the searchId has different searchQuery property
-            var existingSearchLog = await searchLogRepository.GetSearchLogBySearchIdAsync(request.SearchId.Value);
-            if (existingSearchLog != null && existingSearchLog.Query != request.SearchQuery)
-            {
-                searchId = Guid.NewGuid();
-            }
-        }
-        else
-        {
-            searchId = Guid.NewGuid();
-        }
-
-        return searchId!.Value;
-    }
 
     private  CachedSearchResult? CacheLookup(
         string cacheKey)
@@ -167,15 +139,10 @@ public class AccommodationService(
     private static AccommodationDto MapToDto(AccommodationEntity entity) =>
         new(entity.Id, entity.Name, entity.FullDestination, entity.AccommodationType, entity.Coordinate);
 
-    private void EnqueueLog(SearchLogEntity searchLog)
-    {
+    private void EnqueueLog(SearchEvent searchLog) =>
         logQueueService.Enqueue(searchLog);
-    }
     
-    private record CachedSearchResult(
-        List<AccommodationDto> Accommodations,
-        int TotalResult
-    );
+    private record CachedSearchResult(List<AccommodationDto> Accommodations, int TotalResult);
     
     #endregion
 }
