@@ -10,9 +10,10 @@ public static class DependencyInjection
 {
     public static void AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IAccommodationService, AccommodationService>();
+        services.AddScoped<IAccommodationSearchService, AccommodationSearchService>();
         services.AddScoped<IAccommodationInteractionService, AccommodationInteractionService>();
-        services.AddScoped<ISearchSuggestionService, SearchSuggestionService>();
+        services.AddScoped<ISuggestionSearchService, SuggestionSearchService>();
+        services.AddScoped<ISuggestionInteractionService, SuggestionInteractionService>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }

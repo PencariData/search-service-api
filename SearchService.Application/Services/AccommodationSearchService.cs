@@ -13,14 +13,14 @@ using SearchService.Shared.Models;
 
 namespace SearchService.Application.Services;
 
-public class AccommodationService(
+public class AccommodationSearchService(
     IAccommodationRepository accommodationRepository,
     ILogQueueService<SearchEvent> logQueueService,
     IValidator<GetAccommodationRequest> validator,
     IMemoryCache cache,
     CachingOptions cachingOptions,
-    ILogger<AccommodationService> logger)
-    : IAccommodationService
+    ILogger<AccommodationSearchService> logger)
+    : IAccommodationSearchService
 {
     public async Task<GetAccommodationResponse> SearchAccommodationsAsync(
         GetAccommodationRequest request)

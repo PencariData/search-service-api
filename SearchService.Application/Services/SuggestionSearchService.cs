@@ -11,14 +11,14 @@ using SearchService.Shared.Models;
 
 namespace SearchService.Application.Services;
 
-public class SearchSuggestionService(
+public class SuggestionSearchService(
     IAccommodationRepository accommodationRepository,
     IDestinationRepository destinationRepository,
     IValidator<GetSuggestionRequest> validator,
     IMemoryCache cache,
     CachingOptions cachingOptions,
     ILogQueueService<SearchEvent> logQueueService,
-    ILogger<SearchSuggestionService> logger) : ISearchSuggestionService
+    ILogger<SuggestionSearchService> logger) : ISuggestionSearchService
 {
     public async Task<GetSuggestionResponse> GetSuggestionsAsync(GetSuggestionRequest request)
     {
@@ -37,6 +37,7 @@ public class SearchSuggestionService(
             // Log cache hit
             EnqueueLog(new SuggestionsShown(
                 sessionId: sessionId,
+                searchId: Guid.NewGuid(),
                 suggestions: cacheData.AccommodationSuggestions
                     .Concat(cacheData.DestinationSuggestions)
             ));
@@ -63,6 +64,7 @@ public class SearchSuggestionService(
         // Log fresh suggestions
         EnqueueLog(new SuggestionsShown(
             sessionId: sessionId,
+            searchId: Guid.NewGuid(),
             suggestions: accommodationSuggestions.Concat(destinationSuggestions)
         ));
 

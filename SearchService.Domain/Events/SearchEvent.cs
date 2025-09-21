@@ -1,79 +1,81 @@
 namespace SearchService.Domain.Events;
 
-public abstract class SearchEvent
-{
-    public Guid EventId { get; private set; } = Guid.NewGuid();
-    public Guid SessionId { get; private set; }
-    public DateTime OccurredAt { get; private set; } = DateTime.UtcNow;
+#region Abstraction
 
-    protected SearchEvent(Guid sessionId)
-    {
-        SessionId = sessionId;
-    }
+public abstract class SearchEvent(Guid sessionId, Guid? searchId = null)
+{
+    public Guid EventId { get; } = Guid.NewGuid();
+    public Guid SessionId { get; } = sessionId;
+    public Guid? SearchId { get; } = searchId;
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 
     public abstract string EventType { get; }
-    public abstract object ToPayload();
-}
 
-public abstract class SearchScopedEvent : SearchEvent
-{
-    public Guid SearchId { get; private set; }
-
-    protected SearchScopedEvent(Guid sessionId, Guid searchId)
-        : base(sessionId)
+    public virtual object ToPayload()
     {
-        SearchId = searchId;
+        var props = GetType()
+            .GetProperties()
+            .Where(p => p.DeclaringType == GetType() && p.Name != nameof(EventType));
+
+        return props.ToDictionary(p => p.Name, p => p.GetValue(this));
     }
 }
 
-public sealed class SearchPerformed : SearchScopedEvent
-{
-    public string Query { get; }
-    public int Page { get; }
-    public int ResultCount { get; }
-    public long ElapsedMs { get; }
+#endregion
 
-    public SearchPerformed(Guid sessionId, Guid searchId, string query, int page, int resultCount, long elapsedMs)
-        : base(sessionId, searchId)
-    {
-        Query = query;
-        Page = page;
-        ResultCount = resultCount;
-        ElapsedMs = elapsedMs;
-    }
+#region Implementation
+public sealed class SearchPerformed(
+    Guid sessionId,
+    Guid searchId,
+    string query,
+    int page,
+    int resultCount,
+    long elapsedMs)
+    : SearchEvent(sessionId, searchId)
+{
+    public string Query { get; } = query;
+    public int Page { get; } = page;
+    public int ResultCount { get; } = resultCount;
+    public long ElapsedMs { get; } = elapsedMs;
 
     public override string EventType => nameof(SearchPerformed);
-
-    public override object ToPayload() => new { Query, Page, ResultCount, ElapsedMs };
 }
 
-public sealed class ResultClicked : SearchScopedEvent
+public sealed class ResultClicked : SearchEvent
 {
     public int ItemIndex { get; }
 
     public ResultClicked(Guid sessionId, Guid searchId, int itemIndex)
         : base(sessionId, searchId)
     {
-        if (itemIndex < 0) throw new ArgumentOutOfRangeException(nameof(itemIndex));
+        ArgumentOutOfRangeException.ThrowIfNegative(itemIndex);
         ItemIndex = itemIndex;
     }
 
     public override string EventType => nameof(ResultClicked);
-
-    public override object ToPayload() => new { ItemIndex };
 }
 
-public sealed class SuggestionsShown : SearchEvent
+public sealed class SuggestionsShown(Guid sessionId, Guid searchId, IEnumerable<string> suggestions)
+    : SearchEvent(sessionId, searchId)
 {
-    public IReadOnlyList<string> Suggestions { get; }
-
-    public SuggestionsShown(Guid sessionId, IEnumerable<string> suggestions)
-        : base(sessionId)
-    {
-        Suggestions = suggestions.ToList();
-    }
+    public IReadOnlyList<string> Suggestions { get; } = suggestions.ToList();
 
     public override string EventType => nameof(SuggestionsShown);
-
-    public override object ToPayload() => new { Suggestions };
 }
+
+public sealed class SuggestionClicked : SearchEvent
+{
+    public int ItemIndex { get; }
+
+    public SuggestionClicked(Guid sessionId, Guid searchId, int itemIndex)
+        : base(sessionId, searchId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(itemIndex);
+        ItemIndex = itemIndex;
+    }
+
+    public override string EventType => nameof(SuggestionClicked);
+}
+
+
+#endregion

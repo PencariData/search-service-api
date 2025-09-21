@@ -14,7 +14,7 @@ public class SearchEventRepository(AppDbContext db) : ISearchEventRepository
         {
             EventId = domainEvent.EventId,
             SessionId = domainEvent.SessionId,
-            SearchId = (domainEvent is SearchScopedEvent scoped ? scoped.SearchId : null),
+            SearchId = domainEvent.SearchId,
             EventType = domainEvent.EventType,
             Payload = JsonSerializer.Serialize(domainEvent.ToPayload()),
             OccurredAt = domainEvent.OccurredAt

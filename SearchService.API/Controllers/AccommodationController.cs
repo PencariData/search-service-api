@@ -8,7 +8,7 @@ namespace SearchService.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AccommodationController(
-    IAccommodationService accommodationService,
+    IAccommodationSearchService accommodationSearchService,
     IAccommodationInteractionService accommodationInteractionService) : ControllerBase
 {
     [HttpGet("search")]
@@ -17,7 +17,7 @@ public class AccommodationController(
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Accommodations([FromQuery] GetAccommodationRequest request)
     {
-        var result = await accommodationService.SearchAccommodationsAsync(request);
+        var result = await accommodationSearchService.SearchAccommodationsAsync(request);
     
         return Ok(ApiResponse<GetAccommodationResponse>.Ok(result));
     }
